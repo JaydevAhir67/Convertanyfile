@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+@keyframes rocketBob {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-4px) rotate(-1deg);
+  }
+  75% {
+    transform: translateY(3px) rotate(1deg);
+  }
+}
+
+@keyframes rocketThrust {
+  0%, 100% {
+    height: 28px;
+    opacity: 0.9;
+    filter: drop-shadow(0 0 10px #ef4444);
+  }
+  50% {
+    height: 38px;
+    opacity: 1;
+    filter: drop-shadow(0 0 16px #f87171);
+  }
+}
+
+@keyframes starStream {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(200%);
+    opacity: 0;
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+.animate-rocket-bob {
+  animation: rocketBob 2s ease-in-out infinite;
+}
+
+.animate-rocket-thrust {
+  animation: rocketThrust 0.3s ease-in-out infinite;
+}
+
+.animate-star-stream {
+  animation: starStream 1.2s linear infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s ease-in-out infinite;
+}

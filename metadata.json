@@ -1,0 +1,6 @@
+{
+  "name": "ConvertAnyFile",
+  "description": "Convert Any File. Any Format. Anywhere. All-in-one file, media, data, code conversion and scientific computing platform.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

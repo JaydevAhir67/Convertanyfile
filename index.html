@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ConvertAnyFile — Convert Any File. Any Format. Anywhere.</title>
+    <meta name="description" content="Convert Any File. Any Format. Anywhere. All-in-one file, media, data, code conversion and scientific computing platform." />
+    <meta property="og:title" content="ConvertAnyFile — Convert Any File. Any Format. Anywhere." />
+    <meta property="og:description" content="Convert Any File. Any Format. Anywhere. All-in-one file, media, data, code conversion and scientific computing platform." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Default to dark mode on initial load
+      try {
+        const storedTheme = localStorage.getItem('caf_theme');
+        if (storedTheme === 'light') {
+          document.documentElement.classList.remove('dark');
+        } else {
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
+  </head>
+  <body class="bg-slate-950 text-slate-100 transition-colors duration-200">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
