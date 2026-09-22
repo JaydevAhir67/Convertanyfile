@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Rocket, Sparkles, Flame, Zap, Cpu, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Rocket, Sparkles, Flame, Zap, Cpu, CheckCircle2, ShieldCheck, Volume2, VolumeX } from 'lucide-react';
+import { SoundEngine } from '../services/soundEffects';
 
 export interface ConversionRocketModalProps {
   progress: number;
@@ -19,64 +20,26 @@ export const ConversionRocketModal: React.FC<ConversionRocketModalProps> = ({
 }) => {
   const isComplete = progress >= 100;
   const [hasLaunched, setHasLaunched] = useState(false);
+  const [isMuted, setIsMuted] = useState(() => SoundEngine.getMuted());
 
-  // Soft atmospheric audio synthesis for immersion
+  // Futuristic high-speed whoosh sound on rocket appearance
   useEffect(() => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(55, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.5);
-
-      filter.type = 'lowpass';
-      filter.frequency.setValueAtTime(350, ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.5);
-
-      gain.gain.setValueAtTime(0.03, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6);
-
-      osc.connect(filter);
-      filter.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.6);
-    } catch {
-      // Gracefully ignore browser audio auto-play restrictions
-    }
+    SoundEngine.playRocketAppearanceSound();
   }, []);
 
-  // When reaching 100%, trigger blast-off hyper-drive transition
+  // When reaching 100%, trigger blast-off hyper-drive transition sound
   useEffect(() => {
     if (progress >= 100 && !hasLaunched) {
       setHasLaunched(true);
-      try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioCtx) {
-          const ctx = new AudioCtx();
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(180, ctx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(750, ctx.currentTime + 0.45);
-          gain.gain.setValueAtTime(0.06, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.5);
-        }
-      } catch {
-        // Ignore
-      }
+      SoundEngine.playRocketBlastOffSound();
     }
   }, [progress, hasLaunched]);
+
+  const toggleMute = () => {
+    const next = !isMuted;
+    setIsMuted(next);
+    SoundEngine.setMuted(next);
+  };
 
   const defaultStageDescription = (p: number) => {
     if (p < 25) return 'Parsing binary byte stream & validating structure...';
@@ -136,6 +99,20 @@ export const ConversionRocketModal: React.FC<ConversionRocketModalProps> = ({
           animate={{ y: 0, opacity: 1 }}
           className="relative z-10 flex flex-col items-center text-center max-w-md w-full bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl shadow-red-950/50 backdrop-blur-xl"
         >
+          {/* Sound FX Toggle in Top Right */}
+          <button
+            type="button"
+            onClick={toggleMute}
+            className="absolute top-4 right-4 p-2 rounded-xl bg-slate-800/70 hover:bg-slate-700/80 text-slate-300 hover:text-white transition-colors border border-slate-700/50"
+            title={isMuted ? 'Unmute Sound Effects' : 'Mute Sound Effects'}
+          >
+            {isMuted ? (
+              <VolumeX className="w-4 h-4 text-slate-500" />
+            ) : (
+              <Volume2 className="w-4 h-4 text-red-400 animate-pulse" />
+            )}
+          </button>
+
           {/* Top Stage Tag */}
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-red-950/80 border border-red-800/80 text-red-400 text-[11px] font-mono font-bold mb-5 shadow-inner">
             <Flame className="w-3.5 h-3.5 text-red-500 animate-pulse" />

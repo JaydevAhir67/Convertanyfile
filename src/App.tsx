@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar, NavTab } from './components/Navbar';
 import { UniversalUploader } from './components/UniversalUploader';
 import { GoogleTranslateDocsView } from './components/GoogleTranslateDocsView';
@@ -11,7 +11,10 @@ import { VivaPrepView } from './components/VivaPrepView';
 import { BatchQueueView } from './components/BatchQueueView';
 import { DashboardView } from './components/DashboardView';
 import { WebsiteLoadingScreen } from './components/WebsiteLoadingScreen';
-import { ConversionJob } from './types';
+import { LoginModal } from './components/LoginModal';
+import { AuthSecurityTestModal } from './components/AuthSecurityTestModal';
+import { ConversionJob, AuthState } from './types';
+import { AuthService } from './services/authService';
 import { ShieldCheck, Cpu, Flame, Zap } from 'lucide-react';
 
 export default function App() {
@@ -19,6 +22,81 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [jobs, setJobs] = useState<ConversionJob[]>([]);
   const [showInitialLoader, setShowInitialLoader] = useState<boolean>(true);
+
+  // Authentication State
+  const [authState, setAuthState] = useState<AuthState>(() => AuthService.getInitialState());
+  const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
+  const [loginRedirectReason, setLoginRedirectReason] = useState<string | null>(null);
+  const [loginTargetRoute, setLoginTargetRoute] = useState<string | null>('history');
+  const [showSecurityTestModal, setShowSecurityTestModal] = useState<boolean>(false);
+
+  // Subscribe to AuthService changes
+  useEffect(() => {
+    const unsubscribe = AuthService.subscribe(state => {
+      setAuthState(state);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Protected Route Navigation Guard
+  const navigateToTab = useCallback((tab: NavTab) => {
+    // Check if route is protected and user is not authenticated
+    if (AuthService.isRouteProtected(tab) && !AuthService.getInitialState().isAuthenticated) {
+      setLoginTargetRoute(tab);
+      setLoginRedirectReason('unauthorized_redirect');
+      setShowLoginModal(true);
+      try {
+        window.history.pushState(null, '', `/login?redirect=/${tab}`);
+      } catch {}
+      return;
+    }
+
+    setActiveTab(tab);
+    try {
+      const urlPath = tab === 'converter' ? '/' : `/${tab}`;
+      window.history.pushState(null, '', urlPath);
+    } catch {}
+  }, []);
+
+  // Synchronize browser URL paths (e.g. manual entry of /history or hash #/history)
+  useEffect(() => {
+    try {
+      const path =
+        window.location.pathname.replace(/^\/+/, '') ||
+        window.location.hash.replace(/^#\/?/, '');
+
+      if (path === 'history') {
+        if (!AuthService.getInitialState().isAuthenticated) {
+          setLoginTargetRoute('history');
+          setLoginRedirectReason('unauthorized_redirect');
+          setShowLoginModal(true);
+          setActiveTab('converter');
+        } else {
+          setActiveTab('history');
+        }
+      } else if (path === 'login') {
+        setShowLoginModal(true);
+      }
+    } catch {}
+
+    const handlePopState = () => {
+      try {
+        const p = window.location.pathname.replace(/^\/+/, '');
+        if (p === 'history') {
+          if (!AuthService.getInitialState().isAuthenticated) {
+            setLoginTargetRoute('history');
+            setLoginRedirectReason('unauthorized_redirect');
+            setShowLoginModal(true);
+          } else {
+            setActiveTab('history');
+          }
+        }
+      } catch {}
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   // Website ALWAYS opens in Dark Mode by default
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -53,6 +131,30 @@ export default function App() {
     setJobs([]);
   };
 
+  const handleLoginSuccess = (targetRoute?: string) => {
+    setShowLoginModal(false);
+    setLoginRedirectReason(null);
+    if (targetRoute === 'history') {
+      setActiveTab('history');
+      try {
+        window.history.pushState(null, '', '/history');
+      } catch {}
+    }
+  };
+
+  const handleLogout = () => {
+    AuthService.logout();
+    if (activeTab === 'history') {
+      setActiveTab('converter');
+      setLoginTargetRoute('history');
+      setLoginRedirectReason('Session terminated. Sign in to access conversion history.');
+      setShowLoginModal(true);
+      try {
+        window.history.pushState(null, '', '/login?redirect=/history');
+      } catch {}
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-red-600 selection:text-white transition-colors duration-200">
       {/* High-Tech Rocket Boot Loading Animation on Website Opening */}
@@ -60,15 +162,24 @@ export default function App() {
         <WebsiteLoadingScreen onComplete={() => setShowInitialLoader(false)} />
       )}
 
-      {/* Universal Top Navigation with Red Accents & Dark Mode Toggle */}
+      {/* Universal Top Navigation with Red Accents, Auth State & Dark Mode Toggle */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={navigateToTab}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         jobsCount={jobs.length}
         isDarkMode={isDarkMode}
         onToggleDarkMode={handleToggleDarkMode}
+        isAuthenticated={authState.isAuthenticated}
+        user={authState.user}
+        onOpenLogin={() => {
+          setLoginRedirectReason(null);
+          setLoginTargetRoute(activeTab === 'history' ? 'history' : null);
+          setShowLoginModal(true);
+        }}
+        onLogout={handleLogout}
+        onOpenSecurityTest={() => setShowSecurityTestModal(true)}
       />
 
       {/* Main App Canvas */}
@@ -76,7 +187,7 @@ export default function App() {
         {activeTab === 'converter' && (
           <UniversalUploader
             onJobCreated={handleJobCreated}
-            onNavigateToTab={setActiveTab}
+            onNavigateToTab={navigateToTab}
             searchQuery={searchQuery}
           />
         )}
@@ -99,14 +210,39 @@ export default function App() {
           <BatchQueueView
             jobs={jobs}
             onClearJobs={handleClearJobs}
-            onNavigateToConverter={() => setActiveTab('converter')}
+            onNavigateToConverter={() => navigateToTab('converter')}
           />
         )}
 
         {activeTab === 'dashboard' && (
-          <DashboardView onNavigate={setActiveTab} jobsCount={jobs.length} />
+          <DashboardView onNavigate={navigateToTab} jobsCount={jobs.length} />
         )}
       </main>
+
+      {/* Authentication Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          setLoginRedirectReason(null);
+        }}
+        onLoginSuccess={handleLoginSuccess}
+        redirectReason={loginRedirectReason}
+        targetRoute={loginTargetRoute}
+      />
+
+      {/* Functional Authentication Security Test Suite Runner */}
+      <AuthSecurityTestModal
+        isOpen={showSecurityTestModal}
+        onClose={() => setShowSecurityTestModal(false)}
+        currentTab={activeTab}
+        onNavigate={navigateToTab}
+        onTriggerUnauthorizedHistoryAttempt={() => {
+          // Explicitly simulate unauthenticated access attempt to /history
+          navigateToTab('history');
+        }}
+        isAuthenticated={authState.isAuthenticated}
+      />
 
       {/* Clean Modern Engineering Footer */}
       <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400 py-4 px-4 sm:px-8 mt-auto transition-colors duration-200">
@@ -124,6 +260,14 @@ export default function App() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               <span className="text-slate-600 dark:text-slate-300 font-medium">100% Client-Side Privacy</span>
             </span>
+            <span>&bull;</span>
+            <button
+              onClick={() => setShowSecurityTestModal(true)}
+              className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Auth Security Guard Active</span>
+            </button>
             <span>&bull;</span>
             <span className="flex items-center space-x-1">
               <Flame className="w-3 h-3 text-red-500" />

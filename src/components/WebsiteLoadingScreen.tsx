@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Rocket, Sparkles, Shield, Cpu, Zap, Flame } from 'lucide-react';
+import { SoundEngine } from '../services/soundEffects';
 
 interface WebsiteLoadingScreenProps {
   onComplete: () => void;
@@ -11,8 +12,12 @@ export const WebsiteLoadingScreen: React.FC<WebsiteLoadingScreenProps> = ({ onCo
   const [isLaunching, setIsLaunching] = useState(false);
 
   useEffect(() => {
+    // Play supersonic rocket appearance sound
+    SoundEngine.playRocketAppearanceSound();
+
     const startTime = Date.now();
     const duration = 1800; // 1.8 seconds total smooth launch
+    let blastOffPlayed = false;
 
     const interval = setInterval(() => {
       const elapsed = Date.now() - startTime;
@@ -28,6 +33,10 @@ export const WebsiteLoadingScreen: React.FC<WebsiteLoadingScreenProps> = ({ onCo
       } else {
         setPhaseText('Systems Nominal — Launching ConvertAnyFile!');
         setIsLaunching(true);
+        if (!blastOffPlayed) {
+          blastOffPlayed = true;
+          SoundEngine.playRocketBlastOffSound();
+        }
       }
 
       if (pct >= 100) {

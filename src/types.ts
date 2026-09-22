@@ -127,3 +127,18 @@ export interface VivaQuestion {
   complexity?: string;
   keyPoints?: string[];
 }
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: 'user' | 'admin' | 'guest';
+  avatarUrl?: string;
+  lastLoginAt: string;
+}
+
+export interface AuthState {
+  isAuthenticated: boolean;
+  user: UserProfile | null;
+  token: string | null;
+}
