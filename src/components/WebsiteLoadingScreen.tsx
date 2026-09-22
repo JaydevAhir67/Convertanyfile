@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Rocket, Sparkles, Shield, Cpu, Zap, Flame } from 'lucide-react';
+import { Rocket, Sparkles, Shield, Cpu, Zap, Flame, Volume2 } from 'lucide-react';
 import { SoundEngine } from '../services/soundEffects';
 
 interface WebsiteLoadingScreenProps {
@@ -50,10 +50,17 @@ export const WebsiteLoadingScreen: React.FC<WebsiteLoadingScreenProps> = ({ onCo
     return () => clearInterval(interval);
   }, [onComplete]);
 
+  const handleScreenInteraction = async () => {
+    await SoundEngine.unlockAudioContext();
+    SoundEngine.playRocketAppearanceSound();
+  };
+
   return (
     <div
       id="website-initial-loader"
-      className="fixed inset-0 z-[100] bg-slate-950 text-white flex flex-col items-center justify-center select-none overflow-hidden"
+      onClick={handleScreenInteraction}
+      onTouchStart={handleScreenInteraction}
+      className="fixed inset-0 z-[100] bg-slate-950 text-white flex flex-col items-center justify-center select-none overflow-hidden cursor-pointer"
     >
       {/* Dynamic Cosmic Starfield & Speed Lines */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -163,6 +170,12 @@ export const WebsiteLoadingScreen: React.FC<WebsiteLoadingScreenProps> = ({ onCo
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Sound FX Indicator */}
+      <div className="absolute bottom-6 left-6 flex items-center space-x-2 text-[11px] font-mono text-slate-400 bg-slate-900/60 border border-slate-800/80 px-3 py-1.5 rounded-lg">
+        <Volume2 className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+        <span>Rocket Audio Active (Click to ignite)</span>
       </div>
 
       {/* Skip Button */}

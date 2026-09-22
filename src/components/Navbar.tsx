@@ -18,9 +18,12 @@ import {
   Lock,
   LogOut,
   User,
-  ShieldAlert
+  ShieldAlert,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import { UserProfile } from '../types';
+import { SoundEngine } from '../services/soundEffects';
 
 export type NavTab =
   | 'converter'
@@ -63,6 +66,18 @@ export const Navbar: React.FC<NavbarProps> = ({
   onLogout,
   onOpenSecurityTest
 }) => {
+  const [isMuted, setIsMuted] = React.useState(() => SoundEngine.getMuted());
+
+  const handleToggleSound = async () => {
+    await SoundEngine.unlockAudioContext();
+    const nextState = !isMuted;
+    setIsMuted(nextState);
+    SoundEngine.setMuted(nextState);
+    if (!nextState) {
+      // Play instant preview of supersonic speed sound
+      SoundEngine.playRocketAppearanceSound();
+    }
+  };
   const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string; isProtected?: boolean }[] = [
     { id: 'converter', label: 'Universal Converter', icon: <Layers className="w-4 h-4" /> },
     { id: 'translate', label: 'Google Translate', icon: <Languages className="w-4 h-4" />, badge: 'AI OCR' },
@@ -169,6 +184,26 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>Sign In</span>
               </button>
             )}
+
+            {/* Sound FX Toggle & Instant Sound Test Button */}
+            <button
+              id="sound-fx-toggle-btn"
+              type="button"
+              onClick={handleToggleSound}
+              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-xs ${
+                isMuted
+                  ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400'
+                  : 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20'
+              }`}
+              title={isMuted ? 'Unmute Rocket Sound Effects' : 'Mute Sound Effects (Click to test sound)'}
+            >
+              {isMuted ? (
+                <VolumeX className="w-4 h-4 text-slate-400" />
+              ) : (
+                <Volume2 className="w-4 h-4 text-red-500 animate-pulse" />
+              )}
+              <span className="hidden md:inline text-[11px]">{isMuted ? 'Muted' : 'Sound'}</span>
+            </button>
 
             {/* Dark Mode / Light Mode Toggle Button */}
             <button
