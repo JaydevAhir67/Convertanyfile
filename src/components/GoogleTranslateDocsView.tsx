@@ -22,6 +22,7 @@ import {
   TranslationService,
   TranslationResult
 } from '../services/translationService';
+import { DocumentEngine } from '../services/documentEngine';
 import { ConversionRocketModal } from './ConversionRocketModal';
 
 export const GoogleTranslateDocsView: React.FC = () => {
@@ -125,11 +126,11 @@ export const GoogleTranslateDocsView: React.FC = () => {
         setTranslationProgress(85);
         setCurrentStage('Formatting executive document output...');
         const docTitle = selectedFile.name.replace(/\.[^/.]+$/, '');
-        const formattedPdfBlob = (await import('../services/documentEngine')).DocumentEngine.textToPdf(
+        const formattedPdfBlob = DocumentEngine.textToPdf(
           translatedText,
           `${docTitle} (${targetLang.toUpperCase()})`
         );
-        const formattedDocxBlob = await (await import('../services/documentEngine')).DocumentEngine.textToDocx(
+        const formattedDocxBlob = await DocumentEngine.textToDocx(
           translatedText,
           `${docTitle} (${targetLang.toUpperCase()})`
         );

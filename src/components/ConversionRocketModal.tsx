@@ -22,16 +22,25 @@ export const ConversionRocketModal: React.FC<ConversionRocketModalProps> = ({
   const [hasLaunched, setHasLaunched] = useState(false);
   const [isMuted, setIsMuted] = useState(() => SoundEngine.getMuted());
 
-  // Futuristic high-speed whoosh sound on rocket appearance
+  // Futuristic supersonic sound on appearance + continuous rocket engine rumble while processing
   useEffect(() => {
     SoundEngine.playRocketAppearanceSound();
+    SoundEngine.startContinuousRocketHum();
+
+    return () => {
+      SoundEngine.stopContinuousRocketHum();
+    };
   }, []);
 
-  // When reaching 100%, trigger blast-off hyper-drive transition sound
+  // When reaching 100%, trigger blast-off hyper-drive transition sound & success chime
   useEffect(() => {
     if (progress >= 100 && !hasLaunched) {
       setHasLaunched(true);
+      SoundEngine.stopContinuousRocketHum();
       SoundEngine.playRocketBlastOffSound();
+      setTimeout(() => {
+        SoundEngine.playSuccessChimeSound();
+      }, 350);
     }
   }, [progress, hasLaunched]);
 

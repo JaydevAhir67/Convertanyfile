@@ -13,9 +13,10 @@ import { DashboardView } from './components/DashboardView';
 import { WebsiteLoadingScreen } from './components/WebsiteLoadingScreen';
 import { LoginModal } from './components/LoginModal';
 import { AuthSecurityTestModal } from './components/AuthSecurityTestModal';
+import { SoundFxModal } from './components/SoundFxModal';
 import { ConversionJob, AuthState } from './types';
 import { AuthService } from './services/authService';
-import { ShieldCheck, Cpu, Flame, Zap } from 'lucide-react';
+import { ShieldCheck, Cpu, Flame, Zap, Volume2 } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('converter');
@@ -29,6 +30,7 @@ export default function App() {
   const [loginRedirectReason, setLoginRedirectReason] = useState<string | null>(null);
   const [loginTargetRoute, setLoginTargetRoute] = useState<string | null>('history');
   const [showSecurityTestModal, setShowSecurityTestModal] = useState<boolean>(false);
+  const [showSoundFxModal, setShowSoundFxModal] = useState<boolean>(false);
 
   // Subscribe to AuthService changes
   useEffect(() => {
@@ -180,6 +182,7 @@ export default function App() {
         }}
         onLogout={handleLogout}
         onOpenSecurityTest={() => setShowSecurityTestModal(true)}
+        onOpenSoundFx={() => setShowSoundFxModal(true)}
       />
 
       {/* Main App Canvas */}
@@ -244,6 +247,12 @@ export default function App() {
         isAuthenticated={authState.isAuthenticated}
       />
 
+      {/* Interactive Rocket Sound Effects Station Modal */}
+      <SoundFxModal
+        isOpen={showSoundFxModal}
+        onClose={() => setShowSoundFxModal(false)}
+      />
+
       {/* Clean Modern Engineering Footer */}
       <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400 py-4 px-4 sm:px-8 mt-auto transition-colors duration-200">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-medium">
@@ -267,6 +276,14 @@ export default function App() {
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
               <span>Auth Security Guard Active</span>
+            </button>
+            <span>&bull;</span>
+            <button
+              onClick={() => setShowSoundFxModal(true)}
+              className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors"
+            >
+              <Volume2 className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+              <span>Sound FX Station</span>
             </button>
             <span>&bull;</span>
             <span className="flex items-center space-x-1">

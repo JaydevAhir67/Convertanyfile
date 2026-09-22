@@ -50,6 +50,7 @@ interface NavbarProps {
   onOpenLogin: () => void;
   onLogout: () => void;
   onOpenSecurityTest: () => void;
+  onOpenSoundFx?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -64,7 +65,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   user,
   onOpenLogin,
   onLogout,
-  onOpenSecurityTest
+  onOpenSecurityTest,
+  onOpenSoundFx
 }) => {
   const [isMuted, setIsMuted] = React.useState(() => SoundEngine.getMuted());
 
@@ -185,25 +187,33 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* Sound FX Toggle & Instant Sound Test Button */}
-            <button
-              id="sound-fx-toggle-btn"
-              type="button"
-              onClick={handleToggleSound}
-              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shadow-xs ${
-                isMuted
-                  ? 'border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 text-slate-400'
-                  : 'border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400 hover:bg-red-500/20'
-              }`}
-              title={isMuted ? 'Unmute Rocket Sound Effects' : 'Mute Sound Effects (Click to test sound)'}
-            >
-              {isMuted ? (
-                <VolumeX className="w-4 h-4 text-slate-400" />
-              ) : (
-                <Volume2 className="w-4 h-4 text-red-500 animate-pulse" />
+            {/* Sound Controls: Quick Mute + Sound FX Station */}
+            <div className="flex items-center rounded-xl border border-red-500/30 bg-red-500/10 p-0.5 shadow-xs">
+              <button
+                id="sound-fx-quick-mute-btn"
+                type="button"
+                onClick={handleToggleSound}
+                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-colors"
+                title={isMuted ? 'Unmute Rocket Sound Effects' : 'Mute Sound Effects'}
+              >
+                {isMuted ? (
+                  <VolumeX className="w-3.5 h-3.5 text-slate-400" />
+                ) : (
+                  <Volume2 className="w-3.5 h-3.5 animate-pulse" />
+                )}
+              </button>
+              {onOpenSoundFx && (
+                <button
+                  id="sound-fx-station-open-btn"
+                  type="button"
+                  onClick={onOpenSoundFx}
+                  className="px-2 py-1 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1"
+                  title="Open Rocket Sound FX Station (Long rocket sound, sonic boom, warps)"
+                >
+                  <span className="hidden md:inline">Sound FX</span>
+                </button>
               )}
-              <span className="hidden md:inline text-[11px]">{isMuted ? 'Muted' : 'Sound'}</span>
-            </button>
+            </div>
 
             {/* Dark Mode / Light Mode Toggle Button */}
             <button
