@@ -146,7 +146,7 @@ class SoundEffectsService {
       const now = ctx.currentTime;
 
       const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.24 * this.volume, now);
+      masterGain.gain.setValueAtTime(0.58 * this.volume, now);
       masterGain.connect(ctx.destination);
 
       // Layer 1: Supersonic Air Burst
@@ -601,7 +601,7 @@ class SoundEffectsService {
       const now = ctx.currentTime;
 
       const masterGain = ctx.createGain();
-      masterGain.gain.setValueAtTime(0.26 * this.volume, now);
+      masterGain.gain.setValueAtTime(0.65 * this.volume, now);
       masterGain.connect(ctx.destination);
 
       const sub = ctx.createOscillator();
