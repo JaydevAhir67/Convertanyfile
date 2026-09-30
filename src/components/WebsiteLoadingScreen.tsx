@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Rocket, Shield, Cpu, Zap, Flame, Volume2, Sparkles } from 'lucide-react';
+import { Rocket, Shield, Cpu, Zap, Flame, Volume2, Sparkles, CheckCircle2 } from 'lucide-react';
 import { SoundEngine } from '../services/soundEffects';
+import { useRocketSoundPreload } from '../hooks/useRocketSoundPreload';
 
 interface WebsiteLoadingScreenProps {
   onComplete: () => void;
@@ -12,6 +13,9 @@ export const WebsiteLoadingScreen: React.FC<WebsiteLoadingScreenProps> = ({ onCo
   const [isLaunching, setIsLaunching] = useState(false);
   const [isSoundIgnited, setIsSoundIgnited] = useState(false);
   const hasTriggeredRef = useRef(false);
+
+  // Preload and cache rocket audio assets before animation completes
+  const { isPreloaded, isUnlocked, progress: preloadProgress } = useRocketSoundPreload();
 
   // Trigger rocket launch with guaranteed Web Audio unlock on user gesture
   const triggerRocketLaunch = async () => {
@@ -223,10 +227,19 @@ export const WebsiteLoadingScreen: React.FC<WebsiteLoadingScreenProps> = ({ onCo
         </div>
       </div>
 
-      {/* Sound FX Indicator */}
-      <div className="absolute bottom-6 left-6 flex items-center space-x-2 text-[11px] font-mono text-slate-400 bg-slate-900/60 border border-slate-800/80 px-3 py-1.5 rounded-lg">
-        <Volume2 className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-        <span>Audio Engine Ready (Click to Ignite)</span>
+      {/* Sound FX & Audio Preload Cache Indicator */}
+      <div className="absolute bottom-6 left-6 flex items-center space-x-2 text-[11px] font-mono text-slate-400 bg-slate-900/80 border border-slate-800/80 px-3 py-1.5 rounded-lg shadow-lg">
+        {isPreloaded ? (
+          <>
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-emerald-300">Rocket Audio Cached & Armed</span>
+          </>
+        ) : (
+          <>
+            <Volume2 className="w-3.5 h-3.5 text-red-500 animate-pulse" />
+            <span>Preloading Rocket Audio ({preloadProgress}%)...</span>
+          </>
+        )}
       </div>
 
       {/* Skip Button */}

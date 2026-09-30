@@ -15,6 +15,7 @@ class SoundEffectsService {
   private isMuted: boolean = false;
   private volume: number = 0.8; // 0.0 to 1.0
   private isUnlocked: boolean = false;
+  private cachedNoiseBuffers: Map<string, AudioBuffer> = new Map();
   private continuousRocketNodes: {
     noiseSource?: AudioBufferSourceNode;
     osc1?: OscillatorNode;
@@ -87,6 +88,61 @@ class SoundEffectsService {
     }
   }
 
+  /**
+   * Preloads and caches synthesized rocket audio buffers (noise bursts, rocket exhaust buffers)
+   * so they are immediately available without compilation or computation delays.
+   */
+  public async preloadRocketAudioBuffers(): Promise<boolean> {
+    try {
+      const ctx = this.getOrCreateContext();
+      if (!ctx) return false;
+
+      // 1. Preload appearance supersonic air burst buffer (0.75s)
+      if (!this.cachedNoiseBuffers.has('appearance_noise')) {
+        const appSize = Math.floor(ctx.sampleRate * 0.75);
+        const appBuffer = ctx.createBuffer(1, appSize, ctx.sampleRate);
+        const appData = appBuffer.getChannelData(0);
+        for (let i = 0; i < appSize; i++) {
+          appData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.35));
+        }
+        this.cachedNoiseBuffers.set('appearance_noise', appBuffer);
+      }
+
+      // 2. Preload long rocket exhaust roar buffer (4.5s)
+      if (!this.cachedNoiseBuffers.has('long_engine_noise')) {
+        const engineSize = Math.floor(ctx.sampleRate * 4.5);
+        const engineBuffer = ctx.createBuffer(1, engineSize, ctx.sampleRate);
+        const engData = engineBuffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < engineSize; i++) {
+          const white = Math.random() * 2 - 1;
+          lastOut = (lastOut + 0.02 * white) / 1.02;
+          engData[i] = lastOut * 3.5;
+        }
+        this.cachedNoiseBuffers.set('long_engine_noise', engineBuffer);
+      }
+
+      // 3. Preload continuous rocket ambient hum buffer (3.0s loop)
+      if (!this.cachedNoiseBuffers.has('hum_noise')) {
+        const humSize = Math.floor(ctx.sampleRate * 3.0);
+        const humBuffer = ctx.createBuffer(1, humSize, ctx.sampleRate);
+        const humData = humBuffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < humSize; i++) {
+          const white = Math.random() * 2 - 1;
+          lastOut = (lastOut + 0.015 * white) / 1.015;
+          humData[i] = lastOut * 2.8;
+        }
+        this.cachedNoiseBuffers.set('hum_noise', humBuffer);
+      }
+
+      return true;
+    } catch (err) {
+      console.warn('Failed to preload rocket audio buffers:', err);
+      return false;
+    }
+  }
+
   public getOrCreateContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
 
@@ -149,12 +205,16 @@ class SoundEffectsService {
       masterGain.gain.setValueAtTime(0.58 * this.volume, now);
       masterGain.connect(ctx.destination);
 
-      // Layer 1: Supersonic Air Burst
-      const bufferSize = Math.floor(ctx.sampleRate * 0.75);
-      const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-      const output = noiseBuffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) {
-        output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.35));
+      // Layer 1: Supersonic Air Burst (Use cached audio buffer if preloaded)
+      let noiseBuffer = this.cachedNoiseBuffers.get('appearance_noise');
+      if (!noiseBuffer) {
+        const bufferSize = Math.floor(ctx.sampleRate * 0.75);
+        noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          output[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.35));
+        }
+        this.cachedNoiseBuffers.set('appearance_noise', noiseBuffer);
       }
 
       const whiteNoise = ctx.createBufferSource();
@@ -282,15 +342,21 @@ class SoundEffectsService {
       subOsc.stop(now + duration);
 
       // --- LONG TURBULENT EXHAUST ROAR (Stereo Filtered Pink/Brown Noise) ---
-      const noiseBufferLen = Math.floor(ctx.sampleRate * duration);
-      const noiseBuffer = ctx.createBuffer(1, noiseBufferLen, ctx.sampleRate);
-      const data = noiseBuffer.getChannelData(0);
-      let lastOut = 0.0;
-      for (let i = 0; i < noiseBufferLen; i++) {
-        const white = Math.random() * 2 - 1;
-        // Brown noise filter for deep, heavy rocket exhaust
-        lastOut = (lastOut + 0.02 * white) / 1.02;
-        data[i] = lastOut * 3.5;
+      let noiseBuffer = duration === 4.5 ? this.cachedNoiseBuffers.get('long_engine_noise') : undefined;
+      if (!noiseBuffer) {
+        const noiseBufferLen = Math.floor(ctx.sampleRate * duration);
+        noiseBuffer = ctx.createBuffer(1, noiseBufferLen, ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        let lastOut = 0.0;
+        for (let i = 0; i < noiseBufferLen; i++) {
+          const white = Math.random() * 2 - 1;
+          // Brown noise filter for deep, heavy rocket exhaust
+          lastOut = (lastOut + 0.02 * white) / 1.02;
+          data[i] = lastOut * 3.5;
+        }
+        if (duration === 4.5) {
+          this.cachedNoiseBuffers.set('long_engine_noise', noiseBuffer);
+        }
       }
 
       const noiseSource = ctx.createBufferSource();

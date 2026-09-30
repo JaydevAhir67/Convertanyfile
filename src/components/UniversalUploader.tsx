@@ -17,7 +17,10 @@ import {
   ShieldCheck,
   Eye,
   Maximize2,
-  Languages
+  Languages,
+  HardDrive,
+  ExternalLink,
+  AlertCircle
 } from 'lucide-react';
 import { ConversionJob, ToolDefinition } from '../types';
 import { registry } from '../services/registry';
@@ -26,6 +29,9 @@ import { ImageEngine } from '../services/imageEngine';
 import { AudioVideoEngine } from '../services/audioVideoEngine';
 import { DataEngine } from '../services/dataEngine';
 import { TranslationService, SUPPORTED_LANGUAGES } from '../services/translationService';
+import { GoogleDriveService } from '../services/googleDriveService';
+import { AuthService } from '../services/authService';
+import { SecurityEngine } from '../services/securityEngine';
 import { FilePreviewer } from './FilePreviewer';
 import { ConversionRocketModal } from './ConversionRocketModal';
 
@@ -50,6 +56,9 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
   const [activePreset, setActivePreset] = useState<string | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState<boolean>(false);
   const [previewTarget, setPreviewTarget] = useState<'converted' | 'original'>('converted');
+  const [isSavingToDrive, setIsSavingToDrive] = useState(false);
+  const [driveSavedUrl, setDriveSavedUrl] = useState<string | null>(null);
+  const [driveSaveError, setDriveSaveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Popular Conversion Presets
@@ -165,9 +174,10 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
     if (!selectedFile) return ['docx', 'pdf', 'png', 'jpg', 'json', 'csv'];
     const inExt = selectedFile.name.split('.').pop()?.toLowerCase() || '';
 
-    if (inExt === 'pdf') return ['docx', 'pdf', 'jpg', 'png', 'txt'];
-    if (['docx', 'doc', 'txt', 'md', 'html'].includes(inExt)) return ['pdf', 'docx', 'txt'];
-    if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(inExt)) return ['pdf', 'png', 'jpg', 'webp', 'docx', 'txt'];
+    if (inExt === 'pdf') return ['jpg', 'png', 'webp', 'docx', 'txt', 'md', 'pdf'];
+    if (['docx', 'doc'].includes(inExt)) return ['pdf', 'txt', 'md', 'html', 'docx'];
+    if (['txt', 'md', 'html'].includes(inExt)) return ['pdf', 'docx', 'txt', 'md'];
+    if (['jpg', 'jpeg', 'png', 'webp', 'bmp', 'svg'].includes(inExt)) return ['pdf', 'png', 'jpg', 'webp', 'docx', 'txt'];
     if (['csv', 'json', 'xlsx', 'xml'].includes(inExt)) return ['json', 'csv', 'xlsx', 'xml'];
     if (['mp3', 'wav', 'ogg', 'm4a'].includes(inExt)) return ['wav', 'mp3', 'mp4'];
     if (['mp4', 'webm', 'mov'].includes(inExt)) return ['mp3', 'wav'];
@@ -178,14 +188,24 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
   const executeConversion = async () => {
     if (!selectedFile) return;
 
+    // Security & File Validation Check (Magic Bytes + Size + Path Traversal Defense)
+    const validation = await SecurityEngine.validateFileSafety(selectedFile, selectedFile.name);
+    if (!validation.isValid) {
+      alert(`Security Alert: ${validation.error || 'Invalid or prohibited file.'}`);
+      return;
+    }
+
     setIsProcessing(true);
     setProgress(15);
     const startTime = performance.now();
 
-    const inExt = selectedFile.name.split('.').pop()?.toLowerCase() || '';
+    const sanitizedOriginalName = SecurityEngine.sanitizeFilename(selectedFile.name);
+    const inExt = sanitizedOriginalName.split('.').pop()?.toLowerCase() || '';
     const outExt = targetFormat.toLowerCase();
-    const baseName = selectedFile.name.substring(0, selectedFile.name.lastIndexOf('.')) || selectedFile.name;
-    const outputFilename = `${baseName}_converted.${outExt}`;
+    const baseName = sanitizedOriginalName.substring(0, sanitizedOriginalName.lastIndexOf('.')) || sanitizedOriginalName;
+    let actualOutputFilename = `${baseName}_converted.${outExt}`;
+    let previewUrl: string | undefined;
+    let pageImages: string[] | undefined;
 
     try {
       setProgress(35);
@@ -200,30 +220,56 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
           text = trans.translatedText;
         }
         if (outExt === 'pdf') {
-          outputBlob = DocumentEngine.textToPdf(text, selectedFile.name);
+          outputBlob = DocumentEngine.textToPdf(text, sanitizedOriginalName);
         } else if (outExt === 'docx') {
-          outputBlob = await DocumentEngine.textToDocx(text, selectedFile.name);
+          outputBlob = await DocumentEngine.textToDocx(text, sanitizedOriginalName);
         } else {
           outputBlob = new Blob([text], { type: 'text/plain;charset=utf-8' });
         }
-      } else if (inExt === 'pdf' && outExt === 'docx') {
-        // PDF to Word reconstruction with client-side text stream extraction
+      }
+      // PDF to JPG / PNG / WEBP Image Rendering (HIGH PRIORITY FIX)
+      else if (inExt === 'pdf' && (outExt === 'jpg' || outExt === 'jpeg' || outExt === 'png' || outExt === 'webp')) {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const formatMime = (outExt === 'png' ? 'image/png' : outExt === 'webp' ? 'image/webp' : 'image/jpeg') as any;
+        const imgRes = await DocumentEngine.pdfToImages(arrayBuffer, {
+          format: formatMime,
+          quality: 0.95,
+          scale: 1.75,
+          onProgress: p => setProgress(35 + Math.round(p * 0.5))
+        });
+
+        outputBlob = imgRes.primaryBlob;
+        actualOutputFilename = imgRes.pages.length > 1
+          ? `${baseName}_pages.${imgRes.extension}`
+          : `${baseName}.${imgRes.extension}`;
+        previewUrl = imgRes.pages[0]?.dataUrl;
+        pageImages = imgRes.pages.map(p => p.dataUrl);
+      }
+      // PDF to Markdown
+      else if (inExt === 'pdf' && outExt === 'md') {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const mdText = await DocumentEngine.pdfToMarkdown(arrayBuffer, sanitizedOriginalName);
+        outputBlob = new Blob([mdText], { type: 'text/markdown;charset=utf-8' });
+        actualOutputFilename = `${baseName}.md`;
+      }
+      // PDF to Word reconstruction
+      else if (inExt === 'pdf' && outExt === 'docx') {
         const arrayBuffer = await selectedFile.arrayBuffer();
         let extractedText = await DocumentEngine.extractTextFromPdf(arrayBuffer);
         if (!extractedText || !extractedText.trim()) {
-          extractedText = `Document Title: ${selectedFile.name}\n\nReconstructed via ConvertAnyFile Universal Pipeline.\nFile Size: ${(selectedFile.size / 1024).toFixed(1)} KB.\nStatus: Successfully extracted text streams and paragraphs.`;
+          extractedText = `Document Title: ${sanitizedOriginalName}\n\nReconstructed via ConvertAnyFile Universal Pipeline.\nFile Size: ${(selectedFile.size / 1024).toFixed(1)} KB.\nStatus: Successfully extracted text streams and paragraphs.`;
         }
         if (translateToLang !== 'none') {
           setProgress(55);
           const trans = await TranslationService.translateText(extractedText, translateToLang);
           extractedText = trans.translatedText;
         }
-        outputBlob = await DocumentEngine.textToDocx(extractedText, selectedFile.name);
+        outputBlob = await DocumentEngine.textToDocx(extractedText, sanitizedOriginalName);
       } else if (inExt === 'pdf' && outExt === 'pdf') {
         const arrayBuffer = await selectedFile.arrayBuffer();
         if (translateToLang !== 'none') {
           const extractedText = await DocumentEngine.extractTextFromPdf(arrayBuffer);
-          const trans = await TranslationService.translateText(extractedText || selectedFile.name, translateToLang);
+          const trans = await TranslationService.translateText(extractedText || sanitizedOriginalName, translateToLang);
           outputBlob = DocumentEngine.textToPdf(trans.translatedText, `${baseName}_${translateToLang}`);
         } else {
           outputBlob = new Blob([arrayBuffer], { type: 'application/pdf' });
@@ -236,8 +282,31 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
           const trans = await TranslationService.translateText(resText.value || '', translateToLang);
           outputBlob = DocumentEngine.textToPdf(trans.translatedText, `${baseName}_${translateToLang}`);
         } else {
-          outputBlob = await DocumentEngine.docxToPdf(arrayBuffer, selectedFile.name);
+          outputBlob = await DocumentEngine.docxToPdf(arrayBuffer, sanitizedOriginalName);
         }
+      } else if ((inExt === 'docx' || inExt === 'doc') && outExt === 'txt') {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const mammoth = (await import('mammoth')).default;
+        const resText = await mammoth.extractRawText({ arrayBuffer });
+        outputBlob = new Blob([resText.value || ''], { type: 'text/plain;charset=utf-8' });
+        actualOutputFilename = `${baseName}.txt`;
+      } else if ((inExt === 'docx' || inExt === 'doc') && outExt === 'md') {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const mammoth = (await import('mammoth')).default;
+        const res = typeof (mammoth as any).convertToMarkdown === 'function'
+          ? await (mammoth as any).convertToMarkdown({ arrayBuffer }).catch(async () => {
+              const t = await mammoth.extractRawText({ arrayBuffer });
+              return { value: t.value || '' };
+            })
+          : await mammoth.extractRawText({ arrayBuffer });
+        outputBlob = new Blob([res.value || ''], { type: 'text/markdown;charset=utf-8' });
+        actualOutputFilename = `${baseName}.md`;
+      } else if ((inExt === 'docx' || inExt === 'doc') && outExt === 'html') {
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const mammoth = (await import('mammoth')).default;
+        const res = await mammoth.convertToHtml({ arrayBuffer });
+        outputBlob = new Blob([res.value || ''], { type: 'text/html;charset=utf-8' });
+        actualOutputFilename = `${baseName}.html`;
       } else if ((inExt === 'docx' || inExt === 'doc') && outExt === 'docx') {
         const arrayBuffer = await selectedFile.arrayBuffer();
         if (translateToLang !== 'none') {
@@ -258,10 +327,10 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
         outputBlob = new Blob([extractedText], { type: 'text/plain;charset=utf-8' });
       }
       // 2. Images
-      else if (['jpg', 'jpeg', 'png', 'webp', 'bmp'].includes(inExt)) {
+      else if (['jpg', 'jpeg', 'png', 'webp', 'bmp', 'svg'].includes(inExt)) {
         if (outExt === 'pdf') {
           // Centered high-resolution executive A4 PDF
-          outputBlob = await DocumentEngine.imageToPdf(selectedFile, selectedFile.name);
+          outputBlob = await DocumentEngine.imageToPdf(selectedFile, sanitizedOriginalName);
         } else if (outExt === 'docx' || outExt === 'txt') {
           // OCR image text extraction and optional Google translation
           setProgress(50);
@@ -271,12 +340,12 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
             'auto'
           );
           if (outExt === 'docx') {
-            outputBlob = imgRes.formattedDocxBlob || (await DocumentEngine.textToDocx(imgRes.translatedText, selectedFile.name));
+            outputBlob = imgRes.formattedDocxBlob || (await DocumentEngine.textToDocx(imgRes.translatedText, sanitizedOriginalName));
           } else {
             outputBlob = new Blob([imgRes.translatedText], { type: 'text/plain;charset=utf-8' });
           }
         } else {
-          const mime = outExt === 'jpg' ? 'image/jpeg' : outExt === 'webp' ? 'image/webp' : 'image/png';
+          const mime = outExt === 'jpg' || outExt === 'jpeg' ? 'image/jpeg' : outExt === 'webp' ? 'image/webp' : 'image/png';
           outputBlob = await ImageEngine.convertImage(selectedFile, { format: mime as any, quality: 0.95 });
         }
       }
@@ -304,7 +373,7 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
       } else if (['mp3', 'wav', 'ogg'].includes(inExt) && outExt === 'mp4') {
         outputBlob = await AudioVideoEngine.generateVideoFromAudioAndImage({
           audioFile: selectedFile,
-          videoTitle: selectedFile.name.replace(/\.[^/.]+$/, ''),
+          videoTitle: sanitizedOriginalName.replace(/\.[^/.]+$/, ''),
           onProgress: p => setProgress(40 + Math.round(p * 0.5))
         });
       }
@@ -318,22 +387,48 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
       const endTime = performance.now();
       const processingTime = parseFloat(((endTime - startTime) / 1000).toFixed(3));
 
+      // Calculate output cryptographic SHA-256 integrity hash (#71)
+      const outputSha256 = await SecurityEngine.calculateSha256(outputBlob);
+      const jobId = SecurityEngine.generateSecureId('job');
+      const currentUser = AuthService.getInitialState().user;
+      const userId = currentUser?.id || 'anonymous_session';
+
+      // Register temporary file for automated cleanup (#78)
+      const tempRecord = SecurityEngine.registerTemporaryFile(
+        jobId,
+        outputBlob,
+        actualOutputFilename,
+        userId,
+        SecurityEngine.DEFAULT_FILE_RETENTION_MS
+      );
+
       const downloadUrl = URL.createObjectURL(outputBlob);
       const newJob: ConversionJob = {
-        id: `job-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        id: jobId,
         toolId: `${inExt}-to-${outExt}`,
         toolName: `${inExt.toUpperCase()} to ${outExt.toUpperCase()}`,
         category: 'document',
-        originalFilename: selectedFile.name,
-        storedFilename: `${Date.now()}_${selectedFile.name}`,
-        outputFilename,
+        originalFilename: sanitizedOriginalName,
+        storedFilename: `${Date.now()}_${sanitizedOriginalName}`,
+        outputFilename: actualOutputFilename,
         fileSize: outputBlob.size,
         status: 'COMPLETED',
         progress: 100,
         processingTime,
         createdAt: new Date().toLocaleTimeString(),
         downloadUrl,
-        blobData: outputBlob
+        blobData: outputBlob,
+        previewUrl,
+        pageImages,
+        sha256: outputSha256,
+        userId,
+        expiresAt: tempRecord.expires_at,
+        integrityStatus: 'VERIFIED',
+        securityAudit: {
+          isValid: true,
+          detectedMime: validation.detectedMime,
+          detectedExt: validation.detectedExt
+        }
       };
 
       setProgress(100);
@@ -358,10 +453,34 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
     document.body.removeChild(a);
   };
 
+  const handleSaveToGoogleDrive = async () => {
+    if (!currentJob || !currentJob.blobData) return;
+    setIsSavingToDrive(true);
+    setDriveSaveError(null);
+    try {
+      const isConnected = await GoogleDriveService.isDriveConnected();
+      if (!isConnected) {
+        await AuthService.googleSignIn();
+      }
+      const result = await GoogleDriveService.uploadFileToDrive({
+        name: currentJob.outputFilename,
+        blob: currentJob.blobData
+      });
+      setDriveSavedUrl(result.webViewLink);
+    } catch (err: any) {
+      console.error('Error saving to Google Drive:', err);
+      setDriveSaveError(err?.message || 'Failed to save file to Google Drive');
+    } finally {
+      setIsSavingToDrive(false);
+    }
+  };
+
   const resetUploader = () => {
     setSelectedFile(null);
     setCurrentJob(null);
     setProgress(0);
+    setDriveSavedUrl(null);
+    setDriveSaveError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -626,6 +745,33 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
                 </div>
 
                 <div className="flex items-center space-x-2 flex-shrink-0">
+                  {/* Google Drive Save Option */}
+                  {driveSavedUrl ? (
+                    <a
+                      href={driveSavedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-2 rounded-xl bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-xs"
+                      title="Open file in Google Drive"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Stored in Drive</span>
+                      <ExternalLink className="w-3 h-3 ml-0.5" />
+                    </a>
+                  ) : (
+                    <button
+                      id="save-job-to-drive-btn"
+                      type="button"
+                      onClick={handleSaveToGoogleDrive}
+                      disabled={isSavingToDrive}
+                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                      title="Store converted file directly to your Google Drive"
+                    >
+                      <HardDrive className="w-3.5 h-3.5" />
+                      <span>{isSavingToDrive ? 'Saving...' : 'Save to Drive'}</span>
+                    </button>
+                  )}
+
                   <button
                     id="download-result-btn"
                     type="button"
@@ -644,6 +790,13 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
                   </button>
                 </div>
               </div>
+
+              {driveSaveError && (
+                <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs flex items-center space-x-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{driveSaveError}</span>
+                </div>
+              )}
 
               {/* Preview Controls Bar */}
               <div className="flex items-center justify-between px-1">

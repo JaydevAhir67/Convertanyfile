@@ -9,9 +9,11 @@ import {
   X,
   AlertTriangle,
   Sparkles,
-  CheckCircle2
+  CheckCircle2,
+  HardDrive
 } from 'lucide-react';
 import { AuthService } from '../services/authService';
+import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -31,9 +33,24 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [email, setEmail] = useState<string>('jaydevahir676789@gmail.com');
   const [password, setPassword] = useState<string>('••••••••••••');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  const handleGoogleSignIn = async () => {
+    setIsGoogleLoading(true);
+    setErrorMessage(null);
+    try {
+      await AuthService.googleSignIn();
+      setIsGoogleLoading(false);
+      onLoginSuccess(targetRoute || 'history');
+    } catch (err: any) {
+      console.error('Google Sign-In failed:', err);
+      setErrorMessage(err?.message || 'Google Sign-In was cancelled or failed.');
+      setIsGoogleLoading(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +139,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               {errorMessage}
             </div>
           )}
+
+          {/* Google Sign In with Google Drive Storage (Preferred) */}
+          <div className="mb-5 space-y-2">
+            <GoogleSignInButton
+              text="Continue with Google"
+              onClick={handleGoogleSignIn}
+              isLoading={isGoogleLoading}
+            />
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 font-mono">
+              <HardDrive className="w-3 h-3 text-blue-500" />
+              <span>Includes automatic backup to Google Drive</span>
+            </div>
+          </div>
+
+          <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-slate-200 dark:border-slate-800" />
+            </div>
+            <div className="relative flex justify-center text-[10px] uppercase font-bold text-slate-400">
+              <span className="bg-white dark:bg-slate-900 px-2">Or with Email</span>
+            </div>
+          </div>
 
           {/* Login Form */}
           <form onSubmit={handleSubmit} className="space-y-4">

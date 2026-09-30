@@ -20,7 +20,8 @@ import {
   User,
   ShieldAlert,
   Volume2,
-  VolumeX
+  VolumeX,
+  HardDrive
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { SoundEngine } from '../services/soundEffects';
@@ -51,6 +52,8 @@ interface NavbarProps {
   onLogout: () => void;
   onOpenSecurityTest: () => void;
   onOpenSoundFx?: () => void;
+  onOpenDrive?: () => void;
+  hasDriveAccess?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -66,7 +69,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenLogin,
   onLogout,
   onOpenSecurityTest,
-  onOpenSoundFx
+  onOpenSoundFx,
+  onOpenDrive,
+  hasDriveAccess = false
 }) => {
   const [isMuted, setIsMuted] = React.useState(() => SoundEngine.getMuted());
 
@@ -141,21 +146,52 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Controls: Security Test, Auth, Dark Mode Toggle & Privacy Badge */}
           <div className="flex items-center space-x-2">
-            {/* Functional Auth Security Test Button */}
+            {/* Enterprise Security Audit Center (#69 - #92) */}
             <button
               id="open-security-test-btn"
               type="button"
               onClick={onOpenSecurityTest}
               className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold transition-all shadow-xs"
-              title="Run Functional Test of Authentication Security"
+              title="Enterprise Security & Privacy Audit Center (Sections 69-92 Verified)"
             >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Auth Test</span>
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="hidden sm:inline font-bold">Security Audit</span>
             </button>
+
+            {/* Google Drive Storage Button */}
+            {onOpenDrive && (
+              <button
+                id="open-google-drive-btn"
+                type="button"
+                onClick={onOpenDrive}
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-semibold transition-all shadow-xs"
+                title="Google Drive Storage, File Manager & Data Backup"
+              >
+                <HardDrive className="w-3.5 h-3.5 text-blue-500" />
+                <span className="hidden sm:inline">Drive</span>
+                {hasDriveAccess && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Google Drive Connected" />
+                )}
+              </button>
+            )}
 
             {/* Authentication Button / User Profile */}
             {isAuthenticated && user ? (
               <div className="flex items-center space-x-2 pl-1 border-l border-slate-200 dark:border-slate-800">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="w-7 h-7 rounded-full border border-blue-500/40 object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className="hidden lg:flex flex-col text-right leading-tight">
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
                     {user.name}
@@ -183,7 +219,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-semibold transition-all shadow-xs"
               >
                 <Lock className="w-3.5 h-3.5 text-red-400" />
-                <span>Sign In</span>
+                <span>Continue with Google</span>
               </button>
             )}
 

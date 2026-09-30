@@ -41,6 +41,31 @@ export interface ConversionJob {
   downloadUrl?: string;
   blobData?: Blob;
   previewUrl?: string;
+  sha256?: string;
+  pageImages?: string[];
+  userId?: string;
+  expiresAt?: string;
+  isEncrypted?: boolean;
+  encryptionAlgorithm?: 'AES-256-GCM';
+  integrityStatus?: 'VERIFIED' | 'TAMPERED' | 'UNCHECKED';
+  securityAudit?: {
+    isValid: boolean;
+    detectedMime: string;
+    detectedExt: string;
+    warnings?: string[];
+  };
+}
+
+export interface FileIntegrityRecord {
+  file_id: string;
+  user_id: string;
+  original_filename: string;
+  mime_type: string;
+  size: number;
+  sha256: string;
+  created_at: string;
+  expires_at: string;
+  storage_key: string;
 }
 
 // Scientific Computing Types
@@ -135,10 +160,32 @@ export interface UserProfile {
   role: 'user' | 'admin' | 'guest';
   avatarUrl?: string;
   lastLoginAt: string;
+  provider?: 'google' | 'email' | 'demo';
 }
 
 export interface AuthState {
   isAuthenticated: boolean;
   user: UserProfile | null;
   token: string | null;
+  hasDriveAccess?: boolean;
+}
+
+export interface GoogleDriveFile {
+  id: string;
+  name: string;
+  mimeType: string;
+  size?: string;
+  createdTime: string;
+  modifiedTime?: string;
+  webViewLink?: string;
+  webContentLink?: string;
+  thumbnailLink?: string;
+  iconLink?: string;
+}
+
+export interface DriveUploadResult {
+  fileId: string;
+  fileName: string;
+  webViewLink: string;
+  size?: string;
 }

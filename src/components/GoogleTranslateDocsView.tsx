@@ -14,7 +14,10 @@ import {
   FileCheck,
   Eye,
   Search,
-  Maximize2
+  Maximize2,
+  HardDrive,
+  ExternalLink,
+  CheckCircle2
 } from 'lucide-react';
 import {
   SUPPORTED_LANGUAGES,
@@ -24,6 +27,8 @@ import {
 } from '../services/translationService';
 import { DocumentEngine } from '../services/documentEngine';
 import { ConversionRocketModal } from './ConversionRocketModal';
+import { GoogleDriveService } from '../services/googleDriveService';
+import { AuthService } from '../services/authService';
 
 export const GoogleTranslateDocsView: React.FC = () => {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -37,6 +42,9 @@ export const GoogleTranslateDocsView: React.FC = () => {
   const [copied, setCopied] = useState<boolean>(false);
   const [dragActive, setDragActive] = useState<boolean>(false);
   const [previewTab, setPreviewTab] = useState<'translated' | 'original'>('translated');
+  const [isSavingToDrive, setIsSavingToDrive] = useState<boolean>(false);
+  const [driveSavedUrl, setDriveSavedUrl] = useState<string | null>(null);
+  const [driveError, setDriveError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -50,6 +58,8 @@ export const GoogleTranslateDocsView: React.FC = () => {
   const handleFile = (file: File) => {
     setSelectedFile(file);
     setResult(null);
+    setDriveSavedUrl(null);
+    setDriveError(null);
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -184,6 +194,41 @@ export const GoogleTranslateDocsView: React.FC = () => {
     navigator.clipboard.writeText(result.translatedText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSaveToGoogleDrive = async () => {
+    if (!result || !selectedFile) return;
+    setIsSavingToDrive(true);
+    setDriveError(null);
+    try {
+      const isConnected = await GoogleDriveService.isDriveConnected();
+      if (!isConnected) {
+        await AuthService.googleSignIn();
+      }
+
+      // Prefer PDF or DOCX blob, fallback to plain text blob
+      const blobToSave =
+        result.formattedPdfBlob ||
+        result.formattedDocxBlob ||
+        new Blob([result.translatedText], { type: 'text/plain;charset=utf-8' });
+
+      const ext = result.formattedPdfBlob ? 'pdf' : result.formattedDocxBlob ? 'docx' : 'txt';
+      const cleanName = selectedFile.name.replace(/\.[^/.]+$/, '');
+      const outputFilename = `${cleanName}_translated_${targetLang}.${ext}`;
+
+      const res = await GoogleDriveService.uploadFileToDrive({
+        name: outputFilename,
+        blob: blobToSave,
+        description: `Translated document (${targetLang.toUpperCase()}) created with ConvertAnyFile`
+      });
+
+      setDriveSavedUrl(res.webViewLink);
+    } catch (err: any) {
+      console.error('Save translation to Google Drive failed:', err);
+      setDriveError(err?.message || 'Failed to save translated document to Google Drive');
+    } finally {
+      setIsSavingToDrive(false);
+    }
   };
 
   const loadSample = (type: 'image' | 'pdf' | 'report') => {
@@ -544,12 +589,39 @@ export const GoogleTranslateDocsView: React.FC = () => {
                   <span>{copied ? 'Copied to Clipboard!' : 'Copy Text'}</span>
                 </button>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-wrap">
+                  {/* Save to Google Drive Button */}
+                  {driveSavedUrl ? (
+                    <a
+                      href={driveSavedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-3.5 py-2 rounded-xl bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 hover:bg-blue-500/25 font-bold text-xs flex items-center space-x-1.5 transition-all shadow-xs"
+                      title="Open translated document in Google Drive"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Saved in Drive</span>
+                      <ExternalLink className="w-3 h-3 ml-0.5" />
+                    </a>
+                  ) : (
+                    <button
+                      id="save-translation-to-drive-btn"
+                      type="button"
+                      onClick={handleSaveToGoogleDrive}
+                      disabled={isSavingToDrive}
+                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+                      title="Save translated document to your Google Drive"
+                    >
+                      <HardDrive className="w-3.5 h-3.5" />
+                      <span>{isSavingToDrive ? 'Saving...' : 'Save to Drive'}</span>
+                    </button>
+                  )}
+
                   {result.formattedDocxBlob && (
                     <button
                       type="button"
                       onClick={handleDownloadDocx}
-                      className="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all active:scale-95"
+                      className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm transition-all active:scale-95"
                     >
                       <Download className="w-4 h-4" />
                       <span>Download Word (.docx)</span>
@@ -567,6 +639,12 @@ export const GoogleTranslateDocsView: React.FC = () => {
                     </button>
                   )}
                 </div>
+              </div>
+            )}
+
+            {driveError && (
+              <div className="mt-3 p-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-600 dark:text-red-400 text-xs">
+                {driveError}
               </div>
             )}
           </div>
