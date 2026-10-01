@@ -345,6 +345,7 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
         } else {
           const mime = outExt === 'jpg' || outExt === 'jpeg' ? 'image/jpeg' : outExt === 'webp' ? 'image/webp' : 'image/png';
           outputBlob = await ImageEngine.convertImage(selectedFile, { format: mime as any, quality: 0.95 });
+          previewUrl = URL.createObjectURL(outputBlob);
         }
       }
       // 3. Data Engine
@@ -416,7 +417,7 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
         createdAt: new Date().toLocaleTimeString(),
         downloadUrl,
         blobData: outputBlob,
-        previewUrl,
+        previewUrl: previewUrl || (outputBlob.type.startsWith('image/') ? downloadUrl : undefined),
         pageImages,
         sha256: outputSha256,
         userId,
@@ -847,6 +848,7 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
                   fileOrBlob={currentJob.blobData}
                   filename={currentJob.outputFilename}
                   title={`Converted Preview: ${currentJob.outputFilename}`}
+                  pageImages={currentJob.pageImages}
                   mode="inline"
                 />
               ) : selectedFile ? (
@@ -1081,6 +1083,11 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
                 currentJob && previewTarget === 'converted'
                   ? `Full Document Preview: ${currentJob.outputFilename}`
                   : `Source File Preview: ${selectedFile?.name || 'Document'}`
+              }
+              pageImages={
+                currentJob && previewTarget === 'converted'
+                  ? currentJob.pageImages
+                  : undefined
               }
               mode="modal"
               onClose={() => setShowPreviewModal(false)}

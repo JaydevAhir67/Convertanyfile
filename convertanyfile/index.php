@@ -26,11 +26,12 @@ $csrfToken = CsrfMiddleware::getToken();
         <span style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: 18px; letter-spacing: -0.5px;"><?= APP_NAME ?></span>
       </a>
 
-      <nav style="display: flex; align-items: center; gap: 24px; font-size: 13px; font-weight: 600; color: #94a3b8;">
+      <nav style="display: flex; align-items: center; gap: 20px; font-size: 13px; font-weight: 600; color: #94a3b8;">
         <a href="#convert" style="color: #f8fafc;">Convert</a>
-        <a href="#tools" style="hover:color: #f8fafc;">3D Tools</a>
+        <a href="#tools">3D Tools</a>
         <a href="#history">My Conversions</a>
         <a href="#security">Security Vault</a>
+        <a href="system-check.php" style="color: #38bdf8; font-weight: 700; background: rgba(56,189,248,0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.25);">Diagnostics</a>
       </nav>
 
       <div id="nav-user-container">

@@ -22,9 +22,10 @@ import { Security3DVault } from './components/Security3DVault';
 import { AINeuralCoreSection } from './components/AINeuralCoreSection';
 import { Premium3DComparison } from './components/Premium3DComparison';
 import { CustomCursor3D } from './components/CustomCursor3D';
+import { XamppDownloadModal } from './components/XamppDownloadModal';
 import { ConversionJob, AuthState } from './types';
 import { AuthService } from './services/authService';
-import { ShieldCheck, Cpu, Flame, Zap, Volume2, HardDrive } from 'lucide-react';
+import { ShieldCheck, Cpu, Flame, Zap, Volume2, HardDrive, Server } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('converter');
@@ -36,6 +37,7 @@ export default function App() {
   const [authState, setAuthState] = useState<AuthState>(() => AuthService.getInitialState());
   const [showLoginModal, setShowLoginModal] = useState<boolean>(false);
   const [showDriveModal, setShowDriveModal] = useState<boolean>(false);
+  const [showXamppModal, setShowXamppModal] = useState<boolean>(false);
   const [loginRedirectReason, setLoginRedirectReason] = useState<string | null>(null);
   const [loginTargetRoute, setLoginTargetRoute] = useState<string | null>('history');
   const [showSecurityTestModal, setShowSecurityTestModal] = useState<boolean>(false);
@@ -198,6 +200,7 @@ export default function App() {
         onOpenSoundFx={() => setShowSoundFxModal(true)}
         onOpenDrive={() => setShowDriveModal(true)}
         hasDriveAccess={authState.hasDriveAccess}
+        onOpenXampp={() => setShowXamppModal(true)}
       />
 
       {/* Main App Canvas */}
@@ -330,6 +333,12 @@ export default function App() {
         onLoginSuccess={() => setShowDriveModal(true)}
       />
 
+      {/* Full Localhost / XAMPP Deployment & ZIP Download Modal */}
+      <XamppDownloadModal
+        isOpen={showXamppModal}
+        onClose={() => setShowXamppModal(false)}
+      />
+
       {/* Clean Modern Engineering Footer */}
       <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400 py-4 px-4 sm:px-8 mt-auto transition-colors duration-200">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-medium">
@@ -339,6 +348,15 @@ export default function App() {
             <span className="text-red-600 dark:text-red-400 font-semibold">Universal File Engine</span>
             <span>&bull;</span>
             <span>Zero Server Egress</span>
+            <span>&bull;</span>
+            <button
+              onClick={() => setShowXamppModal(true)}
+              className="text-cyan-500 hover:text-cyan-400 font-bold flex items-center gap-1 cursor-pointer"
+              title="XAMPP Localhost Apache + PHP + MySQL Package"
+            >
+              <Server className="w-3.5 h-3.5 text-cyan-400" />
+              <span>XAMPP Localhost Edition</span>
+            </button>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-slate-400 dark:text-slate-500 text-[11px]">

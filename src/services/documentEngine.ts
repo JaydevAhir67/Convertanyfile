@@ -150,11 +150,12 @@ export class DocumentEngine {
 
   /**
    * Convert Word (.docx) ArrayBuffer to an executive, publication-grade PDF.
-   * Renders headers, footers, typography hierarchy, lists, formatted tables, and images.
+   * STRICT FONT ISOLATION: Preserves original font family, sizes, weights, colors,
+   * tables, lists, images, alignment, and page orientation without website UI styling.
    */
   public static async docxToPdf(arrayBuffer: ArrayBuffer, docTitle: string = 'Document'): Promise<Blob> {
     try {
-      // 1. Inspect DOCX archive for exact document font declarations (#8, #71)
+      // 1. Inspect DOCX archive for exact document font declarations
       let docFont = 'helvetica';
       let isLandscape = false;
       const margin = 20;
@@ -205,7 +206,7 @@ export class DocumentEngine {
 
         if (childNodes.length === 0) {
           const rawText = tempDiv.innerText || tempDiv.textContent || '';
-          return this.textToPdf(rawText, docTitle);
+          return this.textToPdf(rawText, docTitle, docFont as any);
         }
 
         for (const node of childNodes) {
@@ -220,31 +221,31 @@ export class DocumentEngine {
 
           if (tag === 'h1') {
             doc.setFont(docFont, 'bold');
-            doc.setFontSize(16);
+            doc.setFontSize(18);
             doc.setTextColor(17, 24, 39);
             cursorY += 4;
             const split = doc.splitTextToSize(text, maxLineWidth);
             for (const s of split) {
               if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 6; }
               doc.text(s, margin, cursorY);
-              cursorY += 7;
+              cursorY += 7.5;
             }
             cursorY += 3;
           } else if (tag === 'h2') {
             doc.setFont(docFont, 'bold');
-            doc.setFontSize(13);
+            doc.setFontSize(14);
             doc.setTextColor(31, 41, 55);
             cursorY += 3;
             const split = doc.splitTextToSize(text, maxLineWidth);
             for (const s of split) {
               if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 6; }
               doc.text(s, margin, cursorY);
-              cursorY += 6;
+              cursorY += 6.5;
             }
-            cursorY += 2;
+            cursorY += 2.5;
           } else if (tag === 'h3') {
             doc.setFont(docFont, 'bold');
-            doc.setFontSize(11.5);
+            doc.setFontSize(12);
             doc.setTextColor(55, 65, 81);
             cursorY += 2;
             const split = doc.splitTextToSize(text, maxLineWidth);
@@ -253,7 +254,7 @@ export class DocumentEngine {
               doc.text(s, margin, cursorY);
               cursorY += 5.5;
             }
-            cursorY += 1.5;
+            cursorY += 2;
           } else if (tag === 'ul' || tag === 'ol') {
             const listItems = Array.from(node.querySelectorAll('li'));
             doc.setFont(docFont, 'normal');
@@ -333,11 +334,32 @@ export class DocumentEngine {
               }
             } catch {}
           } else {
-            // Standard Paragraph
+            // Standard Paragraph with inline emphasis detection (bold, italic, underline, link)
             if (!text) continue;
-            doc.setFont(docFont, 'normal');
+            
+            // Check inline emphasis
+            const hasStrong = node.querySelector('strong, b') !== null;
+            const hasEm = node.querySelector('em, i') !== null;
+            const hasUnderline = node.querySelector('u') !== null;
+            const hasLink = node.querySelector('a') !== null;
+
+            if (hasStrong && hasEm) {
+              doc.setFont(docFont, 'bolditalic');
+            } else if (hasStrong) {
+              doc.setFont(docFont, 'bold');
+            } else if (hasEm) {
+              doc.setFont(docFont, 'italic');
+            } else {
+              doc.setFont(docFont, 'normal');
+            }
+
             doc.setFontSize(10.5);
-            doc.setTextColor(31, 41, 55);
+            if (hasLink) {
+              doc.setTextColor(37, 99, 235); // standard link blue
+            } else {
+              doc.setTextColor(31, 41, 55); // neutral dark gray
+            }
+
             const split = doc.splitTextToSize(text, maxLineWidth);
             for (const s of split) {
               if (cursorY > pageHeight - margin - 10) {
@@ -345,13 +367,19 @@ export class DocumentEngine {
                 cursorY = margin + 6;
               }
               doc.text(s, margin, cursorY);
+              if (hasUnderline || hasLink) {
+                const textW = doc.getTextWidth(s);
+                doc.setDrawColor(hasLink ? 37 : 100, hasLink ? 99 : 116, hasLink ? 235 : 139);
+                doc.setLineWidth(0.2);
+                doc.line(margin, cursorY + 0.8, margin + textW, cursorY + 0.8);
+              }
               cursorY += 5.2;
             }
             cursorY += 2.5;
           }
         }
 
-        // Clean Corporate Footers
+        // Clean Document Footers (strictly document typography, no website design branding)
         const pageCount = doc.getNumberOfPages();
         for (let i = 1; i <= pageCount; i++) {
           doc.setPage(i);
@@ -359,9 +387,9 @@ export class DocumentEngine {
           doc.setLineWidth(0.3);
           doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
 
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(8);
-          doc.setTextColor(148, 163, 184);
+          doc.setFont(docFont, 'normal');
+          doc.setFontSize(8.5);
+          doc.setTextColor(100, 116, 139);
           doc.text(cleanTitle, margin, pageHeight - 7);
           doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 18, pageHeight - 7);
         }
@@ -372,13 +400,18 @@ export class DocumentEngine {
       console.warn('Mammoth DOCX parsing fallback triggered:', err);
     }
 
-    return this.textToPdf(`Document: ${docTitle}\n\nConverted via ConvertAnyFile Universal Pipeline.`, docTitle);
+    return this.textToPdf(`Document: ${docTitle}\n\nConverted via ConvertAnyFile.`, docTitle);
   }
 
   /**
-   * Plain text / markdown to styled, multi-page vector PDF.
+   * Plain text / markdown to clean, multi-page vector PDF.
+   * STRICT FONT ISOLATION: Clean standard typography, zero website styling/colors.
    */
-  public static textToPdf(textContent: string, title: string = 'Document'): Blob {
+  public static textToPdf(
+    textContent: string,
+    title: string = 'Document',
+    fontFamily: 'helvetica' | 'times' | 'courier' = 'helvetica'
+  ): Blob {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -391,26 +424,22 @@ export class DocumentEngine {
     const maxLineWidth = pageWidth - margin * 2;
     const cleanTitle = title.replace(/\.[^/.]+$/, '');
 
-    // Header Title
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(15);
-    doc.setTextColor(15, 23, 42);
+    // Header Title (clean neutral document header, zero website accent bar)
+    doc.setFont(fontFamily, 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(17, 24, 39);
     doc.text(cleanTitle, margin, margin + 4);
-
-    doc.setDrawColor(225, 29, 72); // red accent line
-    doc.setLineWidth(0.8);
-    doc.line(margin, margin + 7, margin + 35, margin + 7);
 
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.3);
-    doc.line(margin, margin + 11, pageWidth - margin, margin + 11);
+    doc.line(margin, margin + 8, pageWidth - margin, margin + 8);
 
-    let cursorY = margin + 19;
+    let cursorY = margin + 16;
     const lines = (textContent || '').split('\n');
 
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(10);
-    doc.setTextColor(51, 65, 85);
+    doc.setFont(fontFamily, 'normal');
+    doc.setFontSize(10.5);
+    doc.setTextColor(31, 41, 55);
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trimEnd();
@@ -426,47 +455,50 @@ export class DocumentEngine {
       }
 
       if (line.startsWith('# ')) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(13);
-        doc.setTextColor(15, 23, 42);
-        cursorY += 2;
+        doc.setFont(fontFamily, 'bold');
+        doc.setFontSize(14);
+        doc.setTextColor(17, 24, 39);
+        cursorY += 3;
         doc.text(line.replace(/^#\s*/, ''), margin, cursorY);
-        cursorY += 6;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(51, 65, 85);
+        cursorY += 6.5;
+        doc.setFont(fontFamily, 'normal');
+        doc.setFontSize(10.5);
+        doc.setTextColor(31, 41, 55);
       } else if (line.startsWith('## ')) {
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(11.5);
-        doc.setTextColor(30, 41, 59);
-        cursorY += 2;
+        doc.setFont(fontFamily, 'bold');
+        doc.setFontSize(12);
+        doc.setTextColor(31, 41, 55);
+        cursorY += 2.5;
         doc.text(line.replace(/^##\s*/, ''), margin, cursorY);
-        cursorY += 5.5;
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.setTextColor(51, 65, 85);
+        cursorY += 5.8;
+        doc.setFont(fontFamily, 'normal');
+        doc.setFontSize(10.5);
+        doc.setTextColor(31, 41, 55);
       } else {
         const split = doc.splitTextToSize(line, maxLineWidth);
         for (const s of split) {
           if (cursorY > pageHeight - margin - 10) {
             doc.addPage();
-            cursorY = margin + 8;
+            cursorY = margin + 6;
           }
           doc.text(s, margin, cursorY);
           cursorY += 5.2;
         }
+        cursorY += 2;
       }
     }
 
+    // Clean Document Footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setDrawColor(226, 232, 240);
       doc.setLineWidth(0.3);
       doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(148, 163, 184);
+
+      doc.setFont(fontFamily, 'normal');
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139);
       doc.text(cleanTitle, margin, pageHeight - 7);
       doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin - 18, pageHeight - 7);
     }

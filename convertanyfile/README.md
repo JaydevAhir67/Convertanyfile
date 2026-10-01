@@ -1,12 +1,36 @@
 # ConvertAnyFile — Full Localhost / XAMPP Project Guide
 
-ConvertAnyFile is an enterprise-grade document, media, and data transformation platform built to run completely locally on a standard Windows computer using **XAMPP (Apache + PHP 8 + MySQL + phpMyAdmin)**.
+ConvertAnyFile is an enterprise-grade document, media, and data transformation platform built to run completely locally on a standard Windows computer using **XAMPP (Apache + PHP 8 + MySQL + phpMyAdmin)** or with the included **Python Master Startup Script**.
 
-URL: `http://localhost/convertanyfile/`
+**Target Localhost URL**: `http://localhost/convertanyfile/`  
+**Diagnostics & Health Check**: `http://localhost/convertanyfile/system-check.php`  
+**Unified Startup Script**: `python run_project.py` (or `python start.py`)
 
 ---
 
-## 1. Quick Installation for Examiner Demonstration
+## ⚡ One-Click Master Startup Script (`run_project.py`)
+
+To run the entire full-stack project (both the modern React 3D frontend and the PHP backend/API) with a single command:
+
+```bash
+# Run both Frontend (Port 3000) and PHP Backend (Port 8000)
+python run_project.py
+```
+*(Alias also supported: `python start.py`)*
+
+### What the Python Startup Script Does Automatically:
+1. **System & Environment Check**: Detects OS (Windows, macOS, Linux) and Python version.
+2. **Node Dependencies**: Verifies `node_modules` and runs `npm install` automatically if needed.
+3. **Dual Server Orchestration**:
+   - Launches Vite React 3D frontend on `http://localhost:3000`.
+   - Detects PHP in system PATH or standard XAMPP paths (`C:\xampp\php\php.exe`) and launches PHP server on `http://localhost:8000`.
+4. **Auto Browser Launch**: Opens `http://localhost:3000` automatically in your default browser.
+5. **Unified Colored Logging**: Pipes `[FRONTEND]` (cyan) and `[PHP BACKEND]` (purple) logs into a single terminal.
+6. **Clean Graceful Shutdown**: Automatically stops both background processes cleanly when you press `Ctrl+C`.
+
+---
+
+## 1. Quick Installation for Examiner Demonstration (Native XAMPP)
 
 ### Step 1: Start XAMPP Control Panel
 1. Open **XAMPP Control Panel** on Windows.
@@ -31,13 +55,13 @@ C:\xampp\htdocs\convertanyfile\
    ```
 4. Click **Import** (or **Go**).
 5. The `convertanyfile` database will be created automatically with all 7 tables:
-   - `users`
-   - `files`
-   - `conversions`
-   - `conversion_history`
-   - `subscriptions`
-   - `payments`
-   - `security_logs`
+   - `users` (Argon2id/Bcrypt hashes, user roles, tiers)
+   - `files` (Uploaded documents, SHA-256 hashes, sizes)
+   - `conversions` (Job states, timings, format pairs)
+   - `conversion_history` (Permanent audit log, download links)
+   - `subscriptions` (Plan states: free, pro, enterprise)
+   - `payments` (Transaction audit records)
+   - `security_logs` (OWASP security audits, IP, event type)
 
 ### Step 4: Verify Database Connection
 The default connection parameters in `config/database.php` are:
@@ -56,86 +80,153 @@ The application will launch immediately with full local functionality!
 
 ---
 
-## 2. Examiner Demonstration Walkthrough
+## 2. Pre-Seeded Local Demonstration Accounts
+
+The database seed (`database/convertanyfile.sql`) automatically includes pre-seeded demo accounts with passwords securely hashed with Bcrypt (zero plaintext in database):
+
+| Role | Email | Password | Tier / Permissions |
+| :--- | :--- | :--- | :--- |
+| **College Examiner** | `examiner@example.local` | `ChangeMe123!` | Enterprise / Full Admin Access |
+| **System Admin** | `admin@convertanyfile.local` | `ChangeMe123!` | Administrator Access |
+
+*(You can also register any new account directly via the UI; passwords will be hashed with native PHP Bcrypt).*
+
+---
+
+## 3. Architecture Diagram
+
+```text
+                     CONVERTANYFILE
+                           │
+                           ▼
+                ┌────────────────────┐
+                │  Futuristic UI     │
+                │  HTML/CSS/JS       │
+                │  Three.js          │
+                └─────────┬──────────┘
+                          │
+                       fetch()
+                          │
+                          ▼
+                ┌────────────────────┐
+                │    PHP API Layer   │
+                │ Authentication     │
+                │ Upload             │
+                │ Conversion         │
+                │ Download           │
+                └─────────┬──────────┘
+                          │
+             ┌────────────┴────────────┐
+             ▼                         ▼
+     ┌────────────────┐       ┌─────────────────┐
+     │     MySQL      │       │ File Processing │
+     │ Users          │       │ PDF             │
+     │ Files          │       │ DOCX            │
+     │ History        │       │ JPG/PNG/WEBP    │
+     │ Payments       │       │ Other formats   │
+     └────────────────┘       └─────────────────┘
+```
+
+---
+
+## 4. Technologies Used
+
+### Frontend
+- **HTML5 & CSS3**: High-performance semantic structure, CSS 3D perspective grids, and custom scrollbars.
+- **JavaScript (ES6+)**: Async pipeline orchestration, drag-and-drop file ingestion, and dynamic DOM updates.
+- **Tailwind CSS & 3D Glassmorphism**: Translucent panels, neon glow borders, and spatial depth hierarchy.
+- **Three.js & Canvas**: 3D interactive holographic conversion portal with mouse-parallax tilt.
+- **Responsive Layout**: Desktop, tablet, and mobile viewport optimizations.
+
+### Backend
+- **PHP 8+**: REST-style JSON API architecture and modular service design.
+- **PHP Data Objects (PDO)**: Prepared SQL statements, `PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION`, `PDO::ATTR_EMULATE_PREPARES => false`.
+- **PHP GD Engine**: High-fidelity image manipulation, resampling, JPEG/PNG/WEBP encoding.
+- **Native OpenXML Parser**: Accurate DOCX XML extraction and manipulation.
+
+### Database
+- **MySQL / MariaDB**: Relational schema with strict foreign keys, indexing, and cascade rules.
+- **phpMyAdmin**: Graphical database management and inspection.
+
+### Local Server
+- **XAMPP / Apache**: HTTP web server, `mod_rewrite` clean routing, and `.htaccess` execution barriers.
+
+### Security
+- **Argon2id & Bcrypt**: Salted password hashing (zero plaintext storage).
+- **SHA-256 Integrity Hashes**: Cryptographic file checksums computed on upload and conversion.
+- **OWASP Hardening**: Input sanitization, path canonicalization against directory traversal.
+- **Upload Isolation**: `.htaccess` blocking PHP execution inside `uploads/`, `processed/`, and `temp/`.
+- **CSRF & Session Security**: HttpOnly and SameSite cookie policies.
+
+---
+
+## 5. Strict Document Font Isolation (DOCX ↔ PDF)
+
+The application enforces strict isolation between website UI design and converted documents:
+- **Website UI**: Futuristic 3D styling (Syne, Plus Jakarta Sans, Tailwind classes, neon accents).
+- **Converted Documents**: Source document formatting is strictly preserved:
+  - Font families (Times New Roman, Arial, Calibri, Courier New, Georgia)
+  - Font sizes (Headings H1-H3, body paragraphs)
+  - Emphasis (bold, italic, bold-italic, underline, links)
+  - Text colors (neutral corporate palette `#111827`, link `#2563EB`)
+  - Tables with header fills and borders
+  - Bulleted and numbered lists
+  - Embedded images
+  - Document footers with dynamic page numbers (`Page X of Y`)
+- **Zero UI Bleed**: No website gradients, red accent bars, or UI fonts are ever applied to generated PDF or Word files.
+
+---
+
+## 6. Final Test Matrix
+
+| Feature | Localhost | Database | Real Output | Preview | Download |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **Register** | ✓ | ✓ | — | — | — |
+| **Login** | ✓ | ✓ | — | — | — |
+| **JPG → PNG** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **PNG → JPG** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **JPG → PDF** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **PDF → JPG** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **DOCX → PDF** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **PDF → DOCX** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **PDF Merge** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **PDF Split** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **PDF Compress** | ✓ | ✓ | ✓ | ✓ | ✓ |
+| **Conversion History** | ✓ | ✓ | — | ✓ | — |
+| **Secure Download** | ✓ | ✓ | ✓ | — | ✓ |
+
+---
+
+## 7. Examiner Demonstration Walkthrough
 
 You can demonstrate the following 6 core modules offline to the examiner:
 
-### Demo 1 — User Registration
+### Demo 1 — System Diagnostics Check
+1. Open: `http://localhost/convertanyfile/system-check.php`.
+2. Click **Re-run Diagnostics**.
+3. Point out the live verification of PHP, PDO, MySQL connection (7 tables active), storage writability, and GD image engine.
+
+### Demo 2 — User Registration & MySQL Storage
 1. Click **Sign In** in the top navigation bar.
-2. Click **Toggle Login / Register**.
-3. Enter Name, Email, and Password.
-4. Click **Register**.
-5. Inspect phpMyAdmin: the user is created in MySQL with a secure Bcrypt/Argon2id password hash (zero plaintext).
+2. Register a new user with name, email, and password.
+3. Open phpMyAdmin &rarr; `convertanyfile.users` table. Show the newly created row with its secure Bcrypt hash.
 
-### Demo 2 — User Login & Session
-1. Log out and log back in.
-2. Observe that a secure HttpOnly, SameSite PHP session cookie is established.
+### Demo 3 — File Upload & SHA-256 Checksum
+1. Drop a document or image into the 3D conversion portal.
+2. The file is uploaded to `uploads/` with a randomized UUID filename.
+3. Check the `files` table in phpMyAdmin: observe the computed SHA-256 hash.
 
-### Demo 3 — File Upload & SHA-256 Verification
-1. Drag and drop any DOCX, PDF, or image file into the 3D upload dropzone.
-2. The file is uploaded to `uploads/` with a **randomized cryptographic filename** (e.g. `8f4c9c1e7a2b...docx`).
-3. The server computes a **SHA-256 cryptographic integrity hash** and stores the record in MySQL `files`.
+### Demo 4 — Real Local Conversion & Preview
+1. Select target format (e.g. `DOCX → PDF` or `JPG → PNG`).
+2. Click **Convert File**.
+3. View the live inline preview. Point out that the document retains its original fonts and layout without website styling leakage.
+4. Click **Download** to inspect the generated binary file.
 
-### Demo 4 — Real Local Conversion (Zero Faking)
-1. Select your target format (e.g., `DOCX → PDF`, `PDF → DOCX`, or `JPG → PNG`).
-2. Click **Transform File →**.
-3. The PHP conversion engine executes locally:
-   - Images are rendered via PHP GD.
-   - DOCX files are parsed directly via OpenXML (`word/document.xml`).
-   - Pure PDF binary vector streams are generated without applying any website styles.
-4. Click **Download File ↓** or **Preview** to view the genuine converted output.
+### Demo 5 — Multi-Page PDF to JPG Preview
+1. Convert a multi-page PDF to JPG images.
+2. Observe the gallery preview showing **Page 1, Page 2, Page 3...** thumbnails.
+3. Download individual pages or the bundled ZIP archive.
 
-### Demo 5 — MySQL Conversion History
-1. Scroll down to **My Conversions**.
-2. Observe the persistent conversion history loaded in real-time from the MySQL database via `api/history/index.php`.
-
-### Demo 6 — Security & Strict Document Font Isolation
-- Upload directory `.htaccess` prevents direct PHP script execution (`php_flag engine off` and script blocking).
-- All SQL queries use PDO prepared statements with `PDO::ATTR_EMULATE_PREPARES => false`.
-- **Strict Font Isolation**: The website's futuristic font (Syne / Plus Jakarta Sans) is **never** applied to converted documents. Original document fonts (Times New Roman, Arial, Calibri, etc.) and layout are strictly preserved.
-
----
-
-## 3. Troubleshooting Guide for XAMPP
-
-### 1. Apache does not start (Port 80 / 443 conflict)
-- **Cause**: Skype, VMware, or Windows IIS is using port 80 or 443.
-- **Fix**: In XAMPP Control Panel, click **Config** > **Apache (httpd.conf)**.
-  Change:
-  ```apache
-  Listen 80
-  ```
-  to:
-  ```apache
-  Listen 8080
-  ```
-  Then access the site via: `http://localhost:8080/convertanyfile/`.
-
-### 2. MySQL does not start (Port 3306 conflict)
-- **Cause**: An existing MySQL/MariaDB service is already running on the computer.
-- **Fix**: Open Windows Services (`services.msc`), find any running `MySQL` or `MariaDB` service, stop it, and click **Start** in XAMPP.
-
-### 3. Database Connection Failed
-- Verify that `convertanyfile.sql` was imported into phpMyAdmin.
-- If your XAMPP MySQL root has a password, update `config/database.php`:
-  ```php
-  private const DB_PASS = 'your_mysql_password';
-  ```
-
-### 4. Upload Size Limit
-- If uploading large files (> 20 MB), verify your `php.ini` settings:
-  ```ini
-  upload_max_filesize = 100M
-  post_max_size = 100M
-  memory_limit = 256M
-  max_execution_time = 300
-  ```
-  Restart Apache after modifying `php.ini`.
-
----
-
-## 4. Architecture Summary
-- **Frontend**: Futuristic 3D glassmorphic interface with CSS 3D transforms and Three.js canvas.
-- **Backend API**: Modular PHP endpoints communicating with JSON / multipart streams.
-- **Database**: Relational MySQL with foreign key constraints, indexes, and SHA-256 auditing.
-- **File System**: Isolated private storage with random identifiers and `.htaccess` execution barriers.
+### Demo 6 — Security & Traversal Protection
+1. Open `uploads/.htaccess`: verify that PHP script execution is disabled (`php_flag engine off`).
+2. Point out that `api/files/download.php` uses database IDs and `realpath()` path canonicalization, rejecting any `../../` traversal attempt with `403 FORBIDDEN_TRAVERSAL` and logging it into `security_logs`.

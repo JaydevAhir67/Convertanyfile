@@ -21,7 +21,8 @@ import {
   ShieldAlert,
   Volume2,
   VolumeX,
-  HardDrive
+  HardDrive,
+  Server
 } from 'lucide-react';
 import { UserProfile } from '../types';
 import { SoundEngine } from '../services/soundEffects';
@@ -54,6 +55,7 @@ interface NavbarProps {
   onOpenSoundFx?: () => void;
   onOpenDrive?: () => void;
   hasDriveAccess?: boolean;
+  onOpenXampp?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -71,7 +73,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenSecurityTest,
   onOpenSoundFx,
   onOpenDrive,
-  hasDriveAccess = false
+  hasDriveAccess = false,
+  onOpenXampp
 }) => {
   const [isMuted, setIsMuted] = React.useState(() => SoundEngine.getMuted());
 
@@ -250,6 +253,21 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               )}
             </div>
+
+            {/* XAMPP / Localhost Deployment Hub Button */}
+            {onOpenXampp && (
+              <button
+                id="open-xampp-modal-btn"
+                type="button"
+                onClick={onOpenXampp}
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-semibold transition-all shadow-xs"
+                title="XAMPP / Localhost Edition (Offline Apache + PHP + MySQL Suite)"
+              >
+                <Server className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden lg:inline text-[11px]">XAMPP Localhost</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              </button>
+            )}
 
             {/* Dark Mode / Light Mode Toggle Button */}
             <button

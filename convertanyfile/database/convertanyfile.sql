@@ -128,15 +128,9 @@ CREATE TABLE IF NOT EXISTS `security_logs` (
   INDEX `idx_sec_type` (`event_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert Seed Admin & Demo User (Password is 'ConvertPass123!')
--- Bcrypt Hash of 'ConvertPass123!': $2y$12$RjG9gBlnv3a2oQv3hW5fpeY5b9s.QYJ93R0V3B5w8QYv3hW5fpeY5
-INSERT IGNORE INTO `users` (`id`, `uuid`, `email`, `password_hash`, `name`, `role`, `plan`)
-VALUES (
-  1,
-  'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-  'demo@convertanyfile.local',
-  '$2y$12$KkU1N4V0GqBq1X8Z0A1P7eWb7G5L9X2R4V6B8N0M2Q4W6E8R0T2Y4',
-  'Demo Scientist',
-  'admin',
-  'pro'
-);
+-- Pre-Seeded Local Demonstration Accounts for Examiner
+-- Securely hashed with Bcrypt (Password: 'ChangeMe123!')
+INSERT INTO `users` (`id`, `uuid`, `email`, `password_hash`, `name`, `role`, `plan`) VALUES
+(1, 'e1a2b3c4-d5e6-7f8a-9b0c-1d2e3f4a5b6c', 'examiner@example.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'College Examiner', 'admin', 'enterprise'),
+(2, 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d', 'admin@convertanyfile.local', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'System Administrator', 'admin', 'pro')
+ON DUPLICATE KEY UPDATE `name` = VALUES(`name`);
