@@ -154,6 +154,35 @@ export class DocumentEngine {
    */
   public static async docxToPdf(arrayBuffer: ArrayBuffer, docTitle: string = 'Document'): Promise<Blob> {
     try {
+      // 1. Inspect DOCX archive for exact document font declarations (#8, #71)
+      let docFont = 'helvetica';
+      let isLandscape = false;
+      const margin = 20;
+      const cleanTitle = docTitle.replace(/\.[^/.]+$/, '');
+
+      try {
+        const zip = await JSZip.loadAsync(arrayBuffer);
+        const docXml = await zip.file('word/document.xml')?.async('string');
+        const stylesXml = await zip.file('word/styles.xml')?.async('string');
+        const combinedXml = (docXml || '') + ' ' + (stylesXml || '');
+
+        // Detect Font: Times New Roman / Serif -> 'times', Courier -> 'courier', Arial / Calibri -> 'helvetica'
+        if (combinedXml.includes('Times New Roman') || combinedXml.includes('Georgia') || combinedXml.includes('Minion') || combinedXml.includes('Times-Roman')) {
+          docFont = 'times';
+        } else if (combinedXml.includes('Courier') || combinedXml.includes('Consolas')) {
+          docFont = 'courier';
+        } else {
+          docFont = 'helvetica';
+        }
+
+        // Detect page orientation
+        if (docXml && docXml.includes('w:orient="landscape"')) {
+          isLandscape = true;
+        }
+      } catch (zipErr) {
+        console.warn('DOCX ZIP font inspection notice:', zipErr);
+      }
+
       const result = await mammoth.convertToHtml({ arrayBuffer });
       const html = result.value;
 
@@ -162,34 +191,16 @@ export class DocumentEngine {
         tempDiv.innerHTML = html;
 
         const doc = new jsPDF({
-          orientation: 'portrait',
+          orientation: isLandscape ? 'landscape' : 'portrait',
           unit: 'mm',
           format: 'a4'
         });
 
-        const margin = 20;
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const maxLineWidth = pageWidth - margin * 2;
-        const cleanTitle = docTitle.replace(/\.[^/.]+$/, '');
+        let cursorY = margin + 6;
 
-        // Executive Top Header
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.setTextColor(15, 23, 42); // slate-900
-        doc.text(cleanTitle, margin, margin + 4);
-
-        // Subtle accent bar under title (Red/Rose accent)
-        doc.setDrawColor(225, 29, 72); // rose-600
-        doc.setLineWidth(0.8);
-        doc.line(margin, margin + 7, margin + 35, margin + 7);
-
-        // Divider rule
-        doc.setDrawColor(226, 232, 240); // slate-200
-        doc.setLineWidth(0.3);
-        doc.line(margin, margin + 11, pageWidth - margin, margin + 11);
-
-        let cursorY = margin + 19;
         const childNodes = Array.from(tempDiv.children);
 
         if (childNodes.length === 0) {
@@ -208,46 +219,46 @@ export class DocumentEngine {
           }
 
           if (tag === 'h1') {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(14);
-            doc.setTextColor(15, 23, 42);
+            doc.setFont(docFont, 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(17, 24, 39);
             cursorY += 4;
             const split = doc.splitTextToSize(text, maxLineWidth);
             for (const s of split) {
-              if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 8; }
+              if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 6; }
               doc.text(s, margin, cursorY);
-              cursorY += 6.5;
+              cursorY += 7;
             }
             cursorY += 3;
           } else if (tag === 'h2') {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.setTextColor(30, 41, 59);
+            doc.setFont(docFont, 'bold');
+            doc.setFontSize(13);
+            doc.setTextColor(31, 41, 55);
             cursorY += 3;
             const split = doc.splitTextToSize(text, maxLineWidth);
             for (const s of split) {
-              if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 8; }
+              if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 6; }
               doc.text(s, margin, cursorY);
-              cursorY += 5.5;
+              cursorY += 6;
             }
             cursorY += 2;
           } else if (tag === 'h3') {
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(10.5);
-            doc.setTextColor(51, 65, 85);
+            doc.setFont(docFont, 'bold');
+            doc.setFontSize(11.5);
+            doc.setTextColor(55, 65, 81);
             cursorY += 2;
             const split = doc.splitTextToSize(text, maxLineWidth);
             for (const s of split) {
-              if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 8; }
+              if (cursorY > pageHeight - margin - 10) { doc.addPage(); cursorY = margin + 6; }
               doc.text(s, margin, cursorY);
-              cursorY += 5;
+              cursorY += 5.5;
             }
             cursorY += 1.5;
           } else if (tag === 'ul' || tag === 'ol') {
             const listItems = Array.from(node.querySelectorAll('li'));
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(51, 65, 85);
+            doc.setFont(docFont, 'normal');
+            doc.setFontSize(10.5);
+            doc.setTextColor(31, 41, 55);
             for (let idx = 0; idx < listItems.length; idx++) {
               const li = listItems[idx];
               const itemText = (li.textContent || '').trim();
@@ -256,16 +267,16 @@ export class DocumentEngine {
               for (const s of split) {
                 if (cursorY > pageHeight - margin - 10) {
                   doc.addPage();
-                  cursorY = margin + 8;
+                  cursorY = margin + 6;
                 }
                 doc.text(s, margin + 4, cursorY);
-                cursorY += 5;
+                cursorY += 5.2;
               }
             }
             cursorY += 2.5;
           } else if (tag === 'table') {
             const rows = Array.from(node.querySelectorAll('tr'));
-            doc.setFontSize(9);
+            doc.setFontSize(9.5);
             for (let rIdx = 0; rIdx < rows.length; rIdx++) {
               const row = rows[rIdx];
               const cells = Array.from(row.querySelectorAll('th, td')).map(c => (c.textContent || '').trim());
@@ -273,26 +284,26 @@ export class DocumentEngine {
 
               if (cursorY > pageHeight - margin - 12) {
                 doc.addPage();
-                cursorY = margin + 8;
+                cursorY = margin + 6;
               }
 
               // Row background
               if (isHeader) {
-                doc.setFillColor(241, 245, 249); // slate-100
+                doc.setFillColor(243, 244, 246);
                 doc.rect(margin, cursorY - 4, maxLineWidth, 7, 'F');
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(15, 23, 42);
+                doc.setFont(docFont, 'bold');
+                doc.setTextColor(17, 24, 39);
               } else {
                 if (rIdx % 2 === 1) {
-                  doc.setFillColor(248, 250, 252);
+                  doc.setFillColor(249, 250, 251);
                   doc.rect(margin, cursorY - 4, maxLineWidth, 6.5, 'F');
                 }
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(51, 65, 85);
+                doc.setFont(docFont, 'normal');
+                doc.setTextColor(55, 65, 81);
               }
 
               // Subtle bottom border
-              doc.setDrawColor(226, 232, 240);
+              doc.setDrawColor(229, 231, 235);
               doc.setLineWidth(0.2);
               doc.line(margin, cursorY + 2.5, pageWidth - margin, cursorY + 2.5);
 
@@ -315,7 +326,7 @@ export class DocumentEngine {
                 const imgH = 80;
                 if (cursorY + imgH > pageHeight - margin) {
                   doc.addPage();
-                  cursorY = margin + 8;
+                  cursorY = margin + 6;
                 }
                 doc.addImage(imgSrc, 'JPEG', margin + (maxLineWidth - imgW) / 2, cursorY, imgW, imgH);
                 cursorY += imgH + 6;
@@ -324,14 +335,14 @@ export class DocumentEngine {
           } else {
             // Standard Paragraph
             if (!text) continue;
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(51, 65, 85);
+            doc.setFont(docFont, 'normal');
+            doc.setFontSize(10.5);
+            doc.setTextColor(31, 41, 55);
             const split = doc.splitTextToSize(text, maxLineWidth);
             for (const s of split) {
               if (cursorY > pageHeight - margin - 10) {
                 doc.addPage();
-                cursorY = margin + 8;
+                cursorY = margin + 6;
               }
               doc.text(s, margin, cursorY);
               cursorY += 5.2;
@@ -1072,39 +1083,37 @@ export class DocumentEngine {
    * - Native Word OpenXML Bullet Lists and Table structures.
    * - Native Word Headers and Footers with dynamic `PageNumber.CURRENT` and `PageNumber.TOTAL_PAGES`.
    */
-  public static async textToDocx(textContent: string, docTitle: string = 'Converted Document'): Promise<Blob> {
+  /**
+   * Converts Text / Extracted PDF stream to an authentic Microsoft Word (.docx) OpenXML document (#6, #7, #71).
+   * Features:
+   * - Strict Document Font Isolation: Uses the uploaded document's detected font (Times New Roman, Arial, Calibri, etc.).
+   * - ZERO Website Styling: No website CSS, no red accent lines, no website UI fonts applied to the document.
+   * - Intelligent Paragraph Reconstruction: Recombines broken visual PDF lines into natural flowing paragraphs.
+   * - Native Word OpenXML Bullet Lists and Table structures.
+   * - Clean Word Headers and Footers with dynamic PageNumber.
+   */
+  public static async textToDocx(
+    textContent: string,
+    docTitle: string = 'Converted Document',
+    docFont: string = 'Calibri'
+  ): Promise<Blob> {
     const cleanTitle = docTitle.replace(/\.[^/.]+$/, '');
     const docChildren: (Paragraph | Table)[] = [];
 
-    // Title Block
+    // Title Block (in original document font, zero website branding)
     docChildren.push(
       new Paragraph({
         heading: HeadingLevel.TITLE,
-        spacing: { before: 180, after: 120 },
+        spacing: { before: 180, after: 160 },
         children: [
           new TextRun({
             text: cleanTitle,
             bold: true,
-            size: 38, // 19pt
-            color: '0F172A',
-            font: 'Calibri'
+            size: 36, // 18pt
+            color: '111827',
+            font: docFont
           })
         ]
-      })
-    );
-
-    // Accent line under title
-    docChildren.push(
-      new Paragraph({
-        spacing: { after: 240 },
-        border: {
-          bottom: {
-            color: 'E11D48',
-            size: 12,
-            style: BorderStyle.SINGLE
-          }
-        },
-        children: []
       })
     );
 
@@ -1174,14 +1183,14 @@ export class DocumentEngine {
     }
     flushCurrentParagraph();
 
-    // 2. Build OpenXML Paragraphs & Tables
+    // 2. Build OpenXML Paragraphs & Tables using the document font
     for (let b = 0; b < logicalBlocks.length; b++) {
       const block = logicalBlocks[b];
 
       if (block.type === 'heading') {
         const level = block.level === 1 ? HeadingLevel.HEADING_1 : block.level === 2 ? HeadingLevel.HEADING_2 : HeadingLevel.HEADING_3;
         const size = block.level === 1 ? 28 : block.level === 2 ? 24 : 22;
-        const color = block.level === 1 ? '0F172A' : block.level === 2 ? '1E293B' : '334155';
+        const color = block.level === 1 ? '111827' : block.level === 2 ? '1F2937' : '374151';
 
         docChildren.push(
           new Paragraph({
@@ -1193,7 +1202,7 @@ export class DocumentEngine {
                 bold: true,
                 size,
                 color,
-                font: 'Calibri'
+                font: docFont
               })
             ]
           })
@@ -1207,8 +1216,8 @@ export class DocumentEngine {
               new TextRun({
                 text: block.text,
                 size: 22,
-                color: '334155',
-                font: 'Calibri'
+                color: '374151',
+                font: docFont
               })
             ]
           })
@@ -1226,14 +1235,14 @@ export class DocumentEngine {
                 text: key + ' ',
                 bold: true,
                 size: 22,
-                color: '1E293B',
-                font: 'Calibri'
+                color: '1F2937',
+                font: docFont
               }),
               new TextRun({
                 text: val.trim(),
                 size: 22,
-                color: '475569',
-                font: 'Calibri'
+                color: '4B5563',
+                font: docFont
               })
             ]
           })
@@ -1264,11 +1273,11 @@ export class DocumentEngine {
                 cellText =>
                   new TableCell({
                     width: { size: Math.floor(9000 / Math.max(cells.length, 1)), type: WidthType.DXA },
-                    shading: isHeader ? { fill: 'F1F5F9' } : undefined,
+                    shading: isHeader ? { fill: 'F3F4F6' } : undefined,
                     margins: { top: 120, bottom: 120, left: 140, right: 140 },
                     borders: {
-                      top: { style: BorderStyle.SINGLE, size: 4, color: 'E2E8F0' },
-                      bottom: { style: BorderStyle.SINGLE, size: 4, color: 'E2E8F0' },
+                      top: { style: BorderStyle.SINGLE, size: 4, color: 'E5E7EB' },
+                      bottom: { style: BorderStyle.SINGLE, size: 4, color: 'E5E7EB' },
                       left: { style: BorderStyle.NONE },
                       right: { style: BorderStyle.NONE }
                     },
@@ -1279,8 +1288,8 @@ export class DocumentEngine {
                             text: cellText,
                             bold: isHeader,
                             size: 20,
-                            font: 'Calibri',
-                            color: isHeader ? '0F172A' : '334155'
+                            font: docFont,
+                            color: isHeader ? '111827' : '374151'
                           })
                         ]
                       })
@@ -1309,8 +1318,8 @@ export class DocumentEngine {
               new TextRun({
                 text: block.text,
                 size: 22,
-                color: '334155',
-                font: 'Calibri'
+                color: '374151',
+                font: docFont
               })
             ]
           })
@@ -1334,9 +1343,9 @@ export class DocumentEngine {
                   children: [
                     new TextRun({
                       text: cleanTitle,
-                      size: 18,
-                      color: '94A3B8',
-                      font: 'Calibri'
+                      size: 16,
+                      color: '9CA3AF',
+                      font: docFont
                     })
                   ]
                 })
@@ -1349,10 +1358,10 @@ export class DocumentEngine {
                 new Paragraph({
                   alignment: AlignmentType.RIGHT,
                   children: [
-                    new TextRun({ text: 'Page ', size: 18, color: '94A3B8', font: 'Calibri' }),
-                    new TextRun({ children: [PageNumber.CURRENT], size: 18, color: '94A3B8', font: 'Calibri' }),
-                    new TextRun({ text: ' of ', size: 18, color: '94A3B8', font: 'Calibri' }),
-                    new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, color: '94A3B8', font: 'Calibri' })
+                    new TextRun({ text: 'Page ', size: 18, color: '6B7280', font: docFont }),
+                    new TextRun({ children: [PageNumber.CURRENT], size: 18, color: '6B7280', font: docFont }),
+                    new TextRun({ text: ' of ', size: 18, color: '6B7280', font: docFont }),
+                    new TextRun({ children: [PageNumber.TOTAL_PAGES], size: 18, color: '6B7280', font: docFont })
                   ]
                 })
               ]
@@ -1364,6 +1373,52 @@ export class DocumentEngine {
     });
 
     return await Packer.toBlob(doc);
+  }
+
+  /**
+   * PDF to DOCX with native PDF font and structural detection (#6, #8).
+   * Detects whether PDF uses Times New Roman, Arial, Calibri, Georgia, Courier New,
+   * extracts text streams, and reconstructs OpenXML Word document preserving font identity.
+   */
+  public static async pdfToDocx(arrayBuffer: ArrayBuffer, docTitle: string = 'Converted Document'): Promise<Blob> {
+    let detectedFont = 'Calibri';
+
+    try {
+      const pdfjs = await this.getPdfJs();
+      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) });
+      const pdf = await loadingTask.promise;
+
+      if (pdf.numPages > 0) {
+        const page1 = await pdf.getPage(1);
+        const textContent = await page1.getTextContent();
+
+        for (const item of (textContent.items as any[])) {
+          const fn = (item.fontName || '').toLowerCase();
+          if (fn.includes('times') || fn.includes('serif') || fn.includes('minion')) {
+            detectedFont = 'Times New Roman';
+            break;
+          } else if (fn.includes('georgia')) {
+            detectedFont = 'Georgia';
+            break;
+          } else if (fn.includes('arial') || fn.includes('helvetica')) {
+            detectedFont = 'Arial';
+            break;
+          } else if (fn.includes('courier') || fn.includes('mono')) {
+            detectedFont = 'Courier New';
+            break;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('PDF font detection notice:', e);
+    }
+
+    const extractedText = await this.extractTextFromPdf(arrayBuffer);
+    const fallbackText = extractedText && extractedText.trim().length > 0
+      ? extractedText
+      : `Document: ${docTitle}\n\nReconstructed via ConvertAnyFile.`;
+
+    return this.textToDocx(fallbackText, docTitle, detectedFont);
   }
 
   /**

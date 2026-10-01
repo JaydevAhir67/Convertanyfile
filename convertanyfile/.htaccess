@@ -1,0 +1,23 @@
+# ConvertAnyFile - Apache Configuration for XAMPP
+# Enable mod_rewrite for clean API routing
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /convertanyfile/
+
+    # Security Headers
+    <IfModule mod_headers.c>
+        Header set X-Content-Type-Options "nosniff"
+        Header set X-Frame-Options "SAMEORIGIN"
+        Header set X-XSS-Protection "1; mode=block"
+        Header set Referrer-Policy "strict-origin-when-cross-origin"
+    </IfModule>
+
+    # Deny access to sensitive files
+    <FilesMatch "(^\.env|^\.git|composer\.json|composer\.lock|convertanyfile\.sql)$">
+        Order Deny,Allow
+        Deny from all
+    </FilesMatch>
+
+    # Disable directory browsing
+    Options -Indexes
+</IfModule>

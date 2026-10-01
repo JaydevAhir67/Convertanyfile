@@ -252,19 +252,17 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
         outputBlob = new Blob([mdText], { type: 'text/markdown;charset=utf-8' });
         actualOutputFilename = `${baseName}.md`;
       }
-      // PDF to Word reconstruction
+      // PDF to Word reconstruction with native PDF font detection (#6, #8, #71)
       else if (inExt === 'pdf' && outExt === 'docx') {
         const arrayBuffer = await selectedFile.arrayBuffer();
-        let extractedText = await DocumentEngine.extractTextFromPdf(arrayBuffer);
-        if (!extractedText || !extractedText.trim()) {
-          extractedText = `Document Title: ${sanitizedOriginalName}\n\nReconstructed via ConvertAnyFile Universal Pipeline.\nFile Size: ${(selectedFile.size / 1024).toFixed(1)} KB.\nStatus: Successfully extracted text streams and paragraphs.`;
-        }
         if (translateToLang !== 'none') {
+          let extractedText = await DocumentEngine.extractTextFromPdf(arrayBuffer);
           setProgress(55);
-          const trans = await TranslationService.translateText(extractedText, translateToLang);
-          extractedText = trans.translatedText;
+          const trans = await TranslationService.translateText(extractedText || sanitizedOriginalName, translateToLang);
+          outputBlob = await DocumentEngine.textToDocx(trans.translatedText, sanitizedOriginalName);
+        } else {
+          outputBlob = await DocumentEngine.pdfToDocx(arrayBuffer, sanitizedOriginalName);
         }
-        outputBlob = await DocumentEngine.textToDocx(extractedText, sanitizedOriginalName);
       } else if (inExt === 'pdf' && outExt === 'pdf') {
         const arrayBuffer = await selectedFile.arrayBuffer();
         if (translateToLang !== 'none') {
@@ -1023,8 +1021,8 @@ export const UniversalUploader: React.FC<UniversalUploaderProps> = ({
         </div>
       </div>
 
-      {/* Popular Preset Converters (Bento Style) */}
-      <div className="pt-2">
+      {/* Popular Preset Converters (Bento Style & 3D Tool Discovery) */}
+      <div id="tool-discovery-section" className="pt-2">
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-bold text-slate-900 dark:text-white">Popular Quick Converters</h2>
           <span className="text-xs text-slate-400 dark:text-slate-500 font-medium">Click to configure preset</span>

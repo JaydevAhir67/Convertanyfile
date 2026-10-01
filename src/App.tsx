@@ -15,6 +15,13 @@ import { LoginModal } from './components/LoginModal';
 import { AuthSecurityTestModal } from './components/AuthSecurityTestModal';
 import { SoundFxModal } from './components/SoundFxModal';
 import { GoogleDriveModal } from './components/GoogleDriveModal';
+import { ThreeDHeroPortal } from './components/ThreeDHeroPortal';
+import { InteractiveFormatUniverse } from './components/InteractiveFormatUniverse';
+import { HowItWorks3D } from './components/HowItWorks3D';
+import { Security3DVault } from './components/Security3DVault';
+import { AINeuralCoreSection } from './components/AINeuralCoreSection';
+import { Premium3DComparison } from './components/Premium3DComparison';
+import { CustomCursor3D } from './components/CustomCursor3D';
 import { ConversionJob, AuthState } from './types';
 import { AuthService } from './services/authService';
 import { ShieldCheck, Cpu, Flame, Zap, Volume2, HardDrive } from 'lucide-react';
@@ -161,7 +168,10 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-red-600 selection:text-white transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-200">
+      {/* Precision 3D Custom Cursor for Desktop */}
+      <CustomCursor3D />
+
       {/* High-Tech Rocket Boot Loading Animation on Website Opening */}
       {showInitialLoader && (
         <WebsiteLoadingScreen onComplete={() => setShowInitialLoader(false)} />
@@ -191,13 +201,66 @@ export default function App() {
       />
 
       {/* Main App Canvas */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-12">
         {activeTab === 'converter' && (
-          <UniversalUploader
-            onJobCreated={handleJobCreated}
-            onNavigateToTab={navigateToTab}
-            searchQuery={searchQuery}
-          />
+          <>
+            {/* Interactive 3D Holographic Hero Portal */}
+            <ThreeDHeroPortal
+              onStartConverting={() => {
+                const dropzone = document.getElementById('universal-dropzone');
+                if (dropzone) {
+                  dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }}
+              onExploreTools={() => {
+                const toolsSection = document.getElementById('tool-discovery-section');
+                if (toolsSection) {
+                  toolsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+            />
+
+            {/* Universal Uploader Core Engine (Dropzone, Controls, Queue) */}
+            <UniversalUploader
+              onJobCreated={handleJobCreated}
+              onNavigateToTab={navigateToTab}
+              searchQuery={searchQuery}
+            />
+
+            {/* Interactive Format Constellation Universe */}
+            <InteractiveFormatUniverse
+              onFilterTools={(fmt) => {
+                setSearchQuery(fmt);
+                const dropzone = document.getElementById('universal-dropzone');
+                if (dropzone) {
+                  dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }}
+            />
+
+            {/* How It Works: 3-Step Horizontal 3D Pipeline */}
+            <HowItWorks3D />
+
+            {/* 3D Security Vault */}
+            <Security3DVault
+              onOpenAuditCenter={() => setShowSecurityTestModal(true)}
+            />
+
+            {/* 3D AI Neural Document Core */}
+            <AINeuralCoreSection
+              onOpenTranslate={() => navigateToTab('translate')}
+              onOpenOcr={() => navigateToTab('converter')}
+            />
+
+            {/* Transparent 3D Comparison & Tiers */}
+            <Premium3DComparison
+              onSelectTier={(tier) => {
+                if (tier === 'pro' && !authState.isAuthenticated) {
+                  setShowLoginModal(true);
+                }
+              }}
+            />
+          </>
         )}
 
         {activeTab === 'translate' && <GoogleTranslateDocsView />}

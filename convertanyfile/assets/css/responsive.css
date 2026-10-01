@@ -1,0 +1,28 @@
+/* ConvertAnyFile Responsive Breakpoints */
+@media (max-width: 1024px) {
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    text-align: center;
+  }
+}
+
+@media (max-width: 768px) {
+  .tools-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .portal-container {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portal-ring-1,
+  .portal-ring-2,
+  .portal-core {
+    animation: none !important;
+  }
+  .tool-card-3d:hover {
+    transform: none !important;
+  }
+}
