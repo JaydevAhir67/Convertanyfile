@@ -20,6 +20,7 @@ import { ConversionJob } from '../types';
 import { FilePreviewer } from './FilePreviewer';
 import { AuthService } from '../services/authService';
 import { SecurityEngine } from '../services/securityEngine';
+import { HuskyCompanionCanvas } from './HuskyCompanionCanvas';
 
 interface BatchQueueViewProps {
   jobs: ConversionJob[];
@@ -160,22 +161,25 @@ export const BatchQueueView: React.FC<BatchQueueViewProps> = ({
       )}
 
       {visibleJobs.length === 0 ? (
-        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-12 text-center max-w-md mx-auto space-y-4 shadow-xs">
-          <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center">
-            <Clock className="w-6 h-6" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-8 text-center max-w-md mx-auto space-y-4 shadow-xs">
+          <div className="flex justify-center">
+            <HuskyCompanionCanvas
+              size="sm"
+              caption="Barnaby is standing by"
+            />
           </div>
           <div>
             <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm">No Jobs Recorded Yet</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Converted files and generated reports will appear in this IDOR-protected queue.
+              Your converted files and transformation reports will appear here in this secure session queue.
             </p>
           </div>
           <button
             type="button"
             onClick={onNavigateToConverter}
-            className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow-xs"
+            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 font-medium text-xs shadow-xs transition-colors cursor-pointer"
           >
-            Go to Universal Converter
+            Launch Universal Converter
           </button>
         </div>
       ) : (

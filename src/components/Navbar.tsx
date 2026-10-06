@@ -88,95 +88,95 @@ export const Navbar: React.FC<NavbarProps> = ({
       SoundEngine.playRocketAppearanceSound();
     }
   };
-  const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: string; isProtected?: boolean }[] = [
-    { id: 'converter', label: 'Universal Converter', icon: <Layers className="w-4 h-4" /> },
-    { id: 'translate', label: 'Google Translate', icon: <Languages className="w-4 h-4" />, badge: 'AI OCR' },
-    { id: 'scientific', label: 'Scientific Lab', icon: <Binary className="w-4 h-4" />, badge: 'Pro' },
-    { id: 'data', label: 'Data Engine', icon: <BarChart3 className="w-4 h-4" /> },
-    { id: 'code', label: 'Code Transpiler', icon: <FileCode className="w-4 h-4" /> },
-    { id: 'media', label: 'Media Studio', icon: <Video className="w-4 h-4" /> },
-    { id: 'units', label: 'Unit Converter', icon: <Scale className="w-4 h-4" /> },
+  const navItems: { id: NavTab; label: string; icon: React.ReactNode; isProtected?: boolean }[] = [
+    { id: 'converter', label: 'Converter', icon: <Layers className="w-3.5 h-3.5" /> },
+    { id: 'translate', label: 'Translate', icon: <Languages className="w-3.5 h-3.5" /> },
+    { id: 'scientific', label: 'Scientific Lab', icon: <Binary className="w-3.5 h-3.5" /> },
+    { id: 'data', label: 'Data', icon: <BarChart3 className="w-3.5 h-3.5" /> },
+    { id: 'code', label: 'Code', icon: <FileCode className="w-3.5 h-3.5" /> },
+    { id: 'media', label: 'Media', icon: <Video className="w-3.5 h-3.5" /> },
+    { id: 'units', label: 'Units', icon: <Scale className="w-3.5 h-3.5" /> },
     {
       id: 'history',
       label: 'History',
-      icon: <History className="w-4 h-4" />,
-      badge: !isAuthenticated ? 'Protected' : jobsCount > 0 ? `${jobsCount}` : undefined,
+      icon: <History className="w-3.5 h-3.5" />,
       isProtected: true
     },
-    { id: 'viva', label: 'Knowledge Base', icon: <GraduationCap className="w-4 h-4" /> },
-    { id: 'dashboard', label: 'Dashboard', icon: <Activity className="w-4 h-4" /> }
+    { id: 'viva', label: 'Docs & Guide', icon: <GraduationCap className="w-3.5 h-3.5" /> },
+    { id: 'dashboard', label: 'Dashboard', icon: <Activity className="w-3.5 h-3.5" /> }
   ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800/80 backdrop-blur-md shadow-xs transition-colors duration-200">
+    <header className="sticky top-0 z-50 bg-white/95 dark:bg-slate-950/95 text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md transition-colors duration-200">
       {/* Top Brand Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo & Tagline */}
+        <div className="flex items-center justify-between h-14">
+          {/* Logo & Product Name */}
           <div
             id="brand-logo"
             onClick={() => setActiveTab('converter')}
-            className="flex items-center space-x-3 cursor-pointer select-none group"
+            className="flex items-center space-x-2.5 cursor-pointer select-none group"
           >
-            <div className="w-9 h-9 bg-gradient-to-tr from-red-600 via-rose-600 to-red-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-red-600/30 border border-red-400/20 group-hover:scale-105 transition-transform">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-7 h-7 rounded-md bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-950 flex items-center justify-center font-bold text-xs shadow-xs">
+              <Layers className="w-4 h-4" />
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <span className="font-black text-xl tracking-tight text-slate-900 dark:text-white font-sans">
-                  Convert<span className="text-red-600 dark:text-red-500">AnyFile</span>
-                </span>
-                <span className="px-2 py-0.5 text-[10px] tracking-wider font-bold rounded-full bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20">
-                  Universal
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 dark:text-slate-400 hidden sm:block">Fast, Private & In-Browser File Conversion</p>
+            <div className="flex items-center space-x-2">
+              <span className="font-semibold text-base tracking-tight text-slate-900 dark:text-white">
+                ConvertAnyFile
+              </span>
+              <span
+                className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 select-none cursor-pointer hover:bg-amber-500/20 transition-colors"
+                title="Barnaby the Brown Siberian Husky · ConvertAnyFile Mascot"
+              >
+                <span>🐺</span>
+                <span className="hidden sm:inline">Barnaby</span>
+              </span>
             </div>
           </div>
 
           {/* Quick Search */}
           <div className="hidden md:flex items-center relative w-64 lg:w-72">
-            <Search className="w-4 h-4 absolute left-3 text-slate-400 dark:text-slate-500" />
+            <Search className="w-3.5 h-3.5 absolute left-3 text-slate-400 dark:text-slate-500" />
             <input
               id="nav-search-input"
               type="text"
-              placeholder="Search tools, formats, formulas..."
+              placeholder="Search tools or formats..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 text-xs rounded-xl pl-9 pr-3 py-2 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 text-xs rounded-lg pl-8 pr-3 py-1.5 focus:outline-none focus:border-slate-400 dark:focus:border-slate-600 transition-all placeholder:text-slate-400 dark:placeholder:text-slate-500"
             />
           </div>
 
-          {/* Right Controls: Security Test, Auth, Dark Mode Toggle & Privacy Badge */}
+          {/* Right Controls */}
           <div className="flex items-center space-x-2">
-            {/* Enterprise Security Audit Center (#69 - #92) */}
-            <button
-              id="open-security-test-btn"
-              type="button"
-              onClick={onOpenSecurityTest}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-red-500/30 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 text-xs font-semibold transition-all shadow-xs"
-              title="Enterprise Security & Privacy Audit Center (Sections 69-92 Verified)"
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="hidden sm:inline font-bold">Security Audit</span>
-            </button>
-
             {/* Google Drive Storage Button */}
             {onOpenDrive && (
               <button
                 id="open-google-drive-btn"
                 type="button"
                 onClick={onOpenDrive}
-                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-xs font-semibold transition-all shadow-xs"
-                title="Google Drive Storage, File Manager & Data Backup"
+                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors"
+                title="Google Drive Storage"
               >
-                <HardDrive className="w-3.5 h-3.5 text-blue-500" />
+                <HardDrive className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                 <span className="hidden sm:inline">Drive</span>
                 {hasDriveAccess && (
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Google Drive Connected" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 )}
               </button>
             )}
+
+            {/* Security Audit Center Button */}
+            <button
+              id="open-security-test-btn"
+              type="button"
+              onClick={onOpenSecurityTest}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors"
+              title="Security & Verification Center"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+              <span className="hidden sm:inline">Security</span>
+            </button>
 
             {/* Authentication Button / User Profile */}
             {isAuthenticated && user ? (
@@ -185,33 +185,27 @@ export const Navbar: React.FC<NavbarProps> = ({
                   <img
                     src={user.avatarUrl}
                     alt={user.name}
-                    className="w-7 h-7 rounded-full border border-blue-500/40 object-cover"
+                    className="w-6 h-6 rounded-full border border-slate-300 dark:border-slate-700 object-cover"
                     onError={(e) => {
                       (e.target as HTMLElement).style.display = 'none';
                     }}
                   />
                 ) : (
-                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-slate-700 dark:text-slate-300">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <div className="hidden lg:flex flex-col text-right leading-tight">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
-                    {user.name}
-                  </span>
-                  <span className="text-[10px] text-slate-400 truncate max-w-[120px]">
-                    {user.email}
-                  </span>
-                </div>
+                <span className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate max-w-[100px] hidden lg:inline">
+                  {user.name}
+                </span>
                 <button
                   id="user-logout-btn"
                   type="button"
                   onClick={onLogout}
-                  className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 hover:bg-rose-500/10 hover:text-rose-500 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors"
+                  className="px-2 py-1 rounded-md text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                   title="Sign Out"
                 >
-                  <LogOut className="w-3.5 h-3.5 text-rose-500" />
-                  <span className="hidden sm:inline text-[11px]">Logout</span>
+                  <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
@@ -219,81 +213,56 @@ export const Navbar: React.FC<NavbarProps> = ({
                 id="open-login-btn"
                 type="button"
                 onClick={onOpenLogin}
-                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white text-xs font-semibold transition-all shadow-xs"
+                className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-xs font-medium hover:bg-slate-800 dark:hover:bg-slate-100 transition-colors"
               >
-                <Lock className="w-3.5 h-3.5 text-red-400" />
-                <span>Continue with Google</span>
+                <Lock className="w-3 h-3" />
+                <span>Sign in</span>
               </button>
             )}
 
-            {/* Sound Controls: Quick Mute + Sound FX Station */}
-            <div className="flex items-center rounded-xl border border-red-500/30 bg-red-500/10 p-0.5 shadow-xs">
-              <button
-                id="sound-fx-quick-mute-btn"
-                type="button"
-                onClick={handleToggleSound}
-                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-600 dark:text-red-400 transition-colors"
-                title={isMuted ? 'Unmute Rocket Sound Effects' : 'Mute Sound Effects'}
-              >
-                {isMuted ? (
+            {/* Minimal Sound FX Toggle Button */}
+            <button
+              id="sound-fx-quick-mute-btn"
+              type="button"
+              onClick={handleToggleSound}
+              className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors"
+              title={isMuted ? 'Sound FX Off (Click to enable)' : 'Sound FX On (Click to mute)'}
+            >
+              {isMuted ? (
+                <>
                   <VolumeX className="w-3.5 h-3.5 text-slate-400" />
-                ) : (
-                  <Volume2 className="w-3.5 h-3.5 animate-pulse" />
-                )}
-              </button>
-              {onOpenSoundFx && (
-                <button
-                  id="sound-fx-station-open-btn"
-                  type="button"
-                  onClick={onOpenSoundFx}
-                  className="px-2 py-1 text-[11px] font-semibold text-red-600 dark:text-red-400 hover:bg-red-500/20 rounded-lg transition-colors flex items-center gap-1"
-                  title="Open Rocket Sound FX Station (Long rocket sound, sonic boom, warps)"
-                >
-                  <span className="hidden md:inline">Sound FX</span>
-                </button>
+                  <span className="hidden md:inline text-[11px] text-slate-400">Muted</span>
+                </>
+              ) : (
+                <>
+                  <Volume2 className="w-3.5 h-3.5 text-slate-700 dark:text-slate-200" />
+                  <span className="hidden md:inline text-[11px]">Sound</span>
+                </>
               )}
-            </div>
-
-            {/* XAMPP / Localhost Deployment Hub Button */}
-            {onOpenXampp && (
-              <button
-                id="open-xampp-modal-btn"
-                type="button"
-                onClick={onOpenXampp}
-                className="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-xs font-semibold transition-all shadow-xs"
-                title="XAMPP / Localhost Edition (Offline Apache + PHP + MySQL Suite)"
-              >
-                <Server className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="hidden lg:inline text-[11px]">XAMPP Localhost</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-              </button>
-            )}
+            </button>
 
             {/* Dark Mode / Light Mode Toggle Button */}
             <button
               id="dark-mode-toggle-btn"
               type="button"
               onClick={onToggleDarkMode}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900 hover:bg-slate-200/70 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all shadow-xs"
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
               title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {isDarkMode ? (
-                <>
-                  <Sun className="w-4 h-4 text-amber-400 animate-pulse" />
-                  <span className="hidden sm:inline text-[11px]">Light</span>
-                </>
+                <Sun className="w-3.5 h-3.5" />
               ) : (
-                <>
-                  <Moon className="w-4 h-4 text-red-600" />
-                  <span className="hidden sm:inline text-[11px]">Dark</span>
-                </>
+                <Moon className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <nav className="flex space-x-1.5 overflow-x-auto no-scrollbar py-2 border-t border-slate-100 dark:border-slate-850">
+        {/* Navigation Tabs - Clean, no pill badges, calm underline styling */}
+        <nav
+          className="flex space-x-1 overflow-x-auto no-scrollbar py-1 border-t border-slate-100 dark:border-slate-900"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
           {navItems.map(item => {
             const isActive = activeTab === item.id;
             return (
@@ -301,28 +270,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={item.id}
                 id={`nav-tab-${item.id}`}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-medium whitespace-nowrap transition-all ${
+                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
                   isActive
-                    ? 'bg-red-600 text-white shadow-xs font-bold'
-                    : 'text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/80'
+                    ? 'bg-slate-100 dark:bg-slate-800/80 text-slate-900 dark:text-white font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-900'
                 }`}
               >
                 {item.icon}
                 <span>{item.label}</span>
-                {item.isProtected && !isAuthenticated && (
-                  <Lock className="w-3 h-3 text-amber-400 ml-0.5" />
-                )}
-                {item.badge && (
-                  <span
-                    className={`ml-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
-                      isActive
-                        ? 'bg-red-700 text-red-100'
-                        : item.badge === 'Protected'
-                        ? 'bg-amber-500/10 text-amber-500 border border-amber-500/30'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                    }`}
-                  >
-                    {item.badge}
+                {item.id === 'history' && jobsCount > 0 && (
+                  <span className="ml-1 text-[10px] text-slate-500 font-mono">
+                    ({jobsCount})
                   </span>
                 )}
               </button>

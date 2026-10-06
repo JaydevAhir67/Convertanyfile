@@ -15,17 +15,9 @@ import { LoginModal } from './components/LoginModal';
 import { AuthSecurityTestModal } from './components/AuthSecurityTestModal';
 import { SoundFxModal } from './components/SoundFxModal';
 import { GoogleDriveModal } from './components/GoogleDriveModal';
-import { ThreeDHeroPortal } from './components/ThreeDHeroPortal';
-import { InteractiveFormatUniverse } from './components/InteractiveFormatUniverse';
-import { HowItWorks3D } from './components/HowItWorks3D';
-import { Security3DVault } from './components/Security3DVault';
-import { AINeuralCoreSection } from './components/AINeuralCoreSection';
-import { Premium3DComparison } from './components/Premium3DComparison';
-import { CustomCursor3D } from './components/CustomCursor3D';
 import { XamppDownloadModal } from './components/XamppDownloadModal';
 import { ConversionJob, AuthState } from './types';
 import { AuthService } from './services/authService';
-import { ShieldCheck, Cpu, Flame, Zap, Volume2, HardDrive, Server } from 'lucide-react';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('converter');
@@ -170,16 +162,16 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-cyan-500 selection:text-slate-950 transition-colors duration-200">
-      {/* Precision 3D Custom Cursor for Desktop */}
-      <CustomCursor3D />
-
-      {/* High-Tech Rocket Boot Loading Animation on Website Opening */}
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans antialiased selection:bg-slate-200 dark:selection:bg-slate-800 transition-colors duration-200">
+      {/* Fast, Premium Startup Experience */}
       {showInitialLoader && (
-        <WebsiteLoadingScreen onComplete={() => setShowInitialLoader(false)} />
+        <WebsiteLoadingScreen
+          onComplete={() => setShowInitialLoader(false)}
+          isDarkMode={isDarkMode}
+        />
       )}
 
-      {/* Universal Top Navigation with Red Accents, Auth State & Dark Mode Toggle */}
+      {/* Universal Top Navigation with Clean, Restrained Styling */}
       <Navbar
         activeTab={activeTab}
         setActiveTab={navigateToTab}
@@ -204,66 +196,14 @@ export default function App() {
       />
 
       {/* Main App Canvas */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-12">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         {activeTab === 'converter' && (
-          <>
-            {/* Interactive 3D Holographic Hero Portal */}
-            <ThreeDHeroPortal
-              onStartConverting={() => {
-                const dropzone = document.getElementById('universal-dropzone');
-                if (dropzone) {
-                  dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-              }}
-              onExploreTools={() => {
-                const toolsSection = document.getElementById('tool-discovery-section');
-                if (toolsSection) {
-                  toolsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
-            />
-
-            {/* Universal Uploader Core Engine (Dropzone, Controls, Queue) */}
-            <UniversalUploader
-              onJobCreated={handleJobCreated}
-              onNavigateToTab={navigateToTab}
-              searchQuery={searchQuery}
-            />
-
-            {/* Interactive Format Constellation Universe */}
-            <InteractiveFormatUniverse
-              onFilterTools={(fmt) => {
-                setSearchQuery(fmt);
-                const dropzone = document.getElementById('universal-dropzone');
-                if (dropzone) {
-                  dropzone.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-              }}
-            />
-
-            {/* How It Works: 3-Step Horizontal 3D Pipeline */}
-            <HowItWorks3D />
-
-            {/* 3D Security Vault */}
-            <Security3DVault
-              onOpenAuditCenter={() => setShowSecurityTestModal(true)}
-            />
-
-            {/* 3D AI Neural Document Core */}
-            <AINeuralCoreSection
-              onOpenTranslate={() => navigateToTab('translate')}
-              onOpenOcr={() => navigateToTab('converter')}
-            />
-
-            {/* Transparent 3D Comparison & Tiers */}
-            <Premium3DComparison
-              onSelectTier={(tier) => {
-                if (tier === 'pro' && !authState.isAuthenticated) {
-                  setShowLoginModal(true);
-                }
-              }}
-            />
-          </>
+          <UniversalUploader
+            onJobCreated={handleJobCreated}
+            onNavigateToTab={navigateToTab}
+            searchQuery={searchQuery}
+            isDarkMode={isDarkMode}
+          />
         )}
 
         {activeTab === 'translate' && <GoogleTranslateDocsView />}
@@ -339,68 +279,41 @@ export default function App() {
         onClose={() => setShowXamppModal(false)}
       />
 
-      {/* Clean Modern Engineering Footer */}
-      <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-850 text-slate-500 dark:text-slate-400 py-4 px-4 sm:px-8 mt-auto transition-colors duration-200">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] font-medium">
-          <div className="flex items-center space-x-2">
-            <span className="font-bold text-slate-800 dark:text-slate-200">ConvertAnyFile</span>
-            <span>&bull;</span>
-            <span className="text-red-600 dark:text-red-400 font-semibold">Universal File Engine</span>
-            <span>&bull;</span>
-            <span>Zero Server Egress</span>
-            <span>&bull;</span>
-            <button
-              onClick={() => setShowXamppModal(true)}
-              className="text-cyan-500 hover:text-cyan-400 font-bold flex items-center gap-1 cursor-pointer"
-              title="XAMPP Localhost Apache + PHP + MySQL Package"
-            >
-              <Server className="w-3.5 h-3.5 text-cyan-400" />
-              <span>XAMPP Localhost Edition</span>
-            </button>
+      {/* Clean Modern SaaS Footer */}
+      <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 py-6 px-4 sm:px-8 mt-auto transition-colors duration-200">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+          <div className="flex items-center space-x-2 text-slate-500 dark:text-slate-400">
+            <span className="font-semibold text-slate-800 dark:text-slate-200">ConvertAnyFile</span>
+            <span>·</span>
+            <span>Client-side file transformation</span>
+            <span>·</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">100% In-Browser Privacy</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-slate-400 dark:text-slate-500 text-[11px]">
+          <div className="flex flex-wrap items-center gap-4 text-slate-500 dark:text-slate-400 text-xs">
             <button
               id="footer-google-drive-btn"
               onClick={() => setShowDriveModal(true)}
-              className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-blue-500 transition-colors"
-              title="Google Drive Storage & Backups"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
+              title="Google Drive Storage"
             >
-              <HardDrive className="w-3.5 h-3.5 text-blue-500" />
-              <span>Google Drive Storage</span>
-              {authState.hasDriveAccess && (
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              )}
+              Google Drive
             </button>
-            <span>&bull;</span>
-            <span className="flex items-center space-x-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              <span className="text-slate-600 dark:text-slate-300 font-medium">100% Client-Side Privacy</span>
-            </span>
-            <span>&bull;</span>
+            <span>·</span>
             <button
               onClick={() => setShowSecurityTestModal(true)}
-              className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors"
-              title="Enterprise Security & Privacy Audit Center"
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
+              title="Security & Verification Suite"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Security Audit (OWASP Hardened)</span>
+              Security Audit
             </button>
-            <span>&bull;</span>
+            <span>·</span>
             <button
-              onClick={() => setShowSoundFxModal(true)}
-              className="flex items-center space-x-1 text-slate-600 dark:text-slate-400 hover:text-red-500 transition-colors"
+              onClick={() => setShowXamppModal(true)}
+              className="hover:text-slate-900 dark:hover:text-white transition-colors"
             >
-              <Volume2 className="w-3.5 h-3.5 text-red-500 animate-pulse" />
-              <span>Sound FX Station</span>
+              Self-Host / Deployment
             </button>
-            <span>&bull;</span>
-            <span className="flex items-center space-x-1">
-              <Flame className="w-3 h-3 text-red-500" />
-              <span className="text-slate-600 dark:text-slate-300 font-medium">Red Rocket Speed Pipeline</span>
-            </span>
-            <span>&bull;</span>
-            <span className="text-red-600 dark:text-red-400 font-mono font-bold">READY</span>
           </div>
         </div>
       </footer>

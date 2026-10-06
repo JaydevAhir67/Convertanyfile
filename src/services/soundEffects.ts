@@ -790,6 +790,257 @@ class SoundEffectsService {
       osc.stop(now + 0.14);
     } catch {}
   }
+
+  // ==========================================
+  // SPECIFIC 8-STAGE 3D ROCKET SOUND DESIGN
+  // ==========================================
+
+  /**
+   * 1. File Selected — Subtle digital confirmation
+   */
+  public async playFileSelectedSound() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, now); // D5
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.05); // A5
+      gain.gain.setValueAtTime(0.08 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    } catch {}
+  }
+
+  /**
+   * 2. Upload / Preparing — Soft processing tone
+   */
+  public async playPreparingSound() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(320, now);
+      osc.frequency.linearRampToValueAtTime(440, now + 0.1);
+      gain.gain.setValueAtTime(0.06 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    } catch {}
+  }
+
+  /**
+   * 3. Rocket Startup — Soft mechanical / engine startup
+   */
+  public async playRocketStartupSound() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(65, now);
+      osc.frequency.exponentialRampToValueAtTime(180, now + 0.25);
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(220, now);
+      gain.gain.setValueAtTime(0.06 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } catch {}
+  }
+
+  /**
+   * 4. Rocket Launch — Controlled engine ignition whoosh
+   */
+  public async playRocketLaunchSound() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      // Soft filtered noise burst
+      const bufferSize = Math.floor(ctx.sampleRate * 0.4);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.18));
+      }
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = 'bandpass';
+      filter.frequency.setValueAtTime(350, now);
+      filter.frequency.exponentialRampToValueAtTime(900, now + 0.2);
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.12 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
+      noise.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+      noise.start(now);
+    } catch {}
+  }
+
+  /**
+   * 5. Space Travel — Subtle atmospheric / low-volume movement sound
+   */
+  public startSpaceTravelHum() {
+    this.startContinuousRocketHum();
+  }
+
+  public stopSpaceTravelHum() {
+    this.stopContinuousRocketHum();
+  }
+
+  /**
+   * 6. Conversion Almost Complete — Subtle rising tone
+   */
+  public async playAlmostDoneSound() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); // C5
+      osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.15); // G5
+      gain.gain.setValueAtTime(0.07 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch {}
+  }
+
+  /**
+   * 7. Conversion Complete — Clean success sound
+   */
+  public async playConversionCompleteSound() {
+    await this.playSuccessChimeSound();
+  }
+
+  /**
+   * 8. Error — Subtle error sound
+   */
+  public async playErrorSound() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(330, now); // E4
+      osc.frequency.setValueAtTime(220, now + 0.08); // A3
+      gain.gain.setValueAtTime(0.1 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.24);
+    } catch {}
+  }
+
+  /**
+   * 9. Siberian Husky Companion Sounds (100% Procedural Web Audio)
+   */
+  public async playHuskyGreeting() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      // Soft gentle friendly woof
+      const osc = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(420, now + 0.05);
+      osc.frequency.exponentialRampToValueAtTime(220, now + 0.16);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(650, now);
+      filter.Q.setValueAtTime(3, now);
+
+      gain.gain.setValueAtTime(0.08 * this.volume, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + 0.2);
+    } catch {}
+  }
+
+  public async playHuskyExcited() {
+    if (this.isMuted) return;
+    const ctx = this.getOrCreateContext();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended') await ctx.resume();
+      const now = ctx.currentTime;
+      // Double playful excited yip
+      [0, 0.11].forEach((delay, idx) => {
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+
+        const t = now + delay;
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(idx === 0 ? 380 : 480, t);
+        osc.frequency.exponentialRampToValueAtTime(idx === 0 ? 520 : 640, t + 0.04);
+        osc.frequency.exponentialRampToValueAtTime(idx === 0 ? 340 : 410, t + 0.09);
+
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, t);
+        filter.Q.setValueAtTime(2, t);
+
+        gain.gain.setValueAtTime(0.07 * this.volume, t);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(t);
+        osc.stop(t + 0.11);
+      });
+    } catch {}
+  }
 }
 
 export const SoundEngine = new SoundEffectsService();

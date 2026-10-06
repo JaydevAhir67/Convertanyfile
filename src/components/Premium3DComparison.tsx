@@ -12,7 +12,7 @@ export const Premium3DComparison: React.FC<Premium3DComparisonProps> = ({ onSele
     'High-Resolution PDF to JPG / PNG',
     'Cryptographic SHA-256 File Integrity',
     'Instant File Previews & Downloads',
-    'Localhost & XAMPP Standalone Compatibility'
+    'Pure In-Browser Offline Execution & Zero Data Egress'
   ];
 
   const proFeatures = [
@@ -22,7 +22,7 @@ export const Premium3DComparison: React.FC<Premium3DComparisonProps> = ({ onSele
     'Deep OCR & Scanned Table Extraction',
     'Google Drive Automatic Backup Integration',
     'High-DPI Vector Print Optimization (300+ DPI)',
-    'Full PHP + MySQL Localhost Database Sync'
+    'Enterprise Cryptographic Audit Log Vault'
   ];
 
   return (
