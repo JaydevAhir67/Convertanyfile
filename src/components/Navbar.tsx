@@ -111,21 +111,28 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Top Brand Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
-          {/* Logo & Product Name */}
+          {/* Logo & Product Name - Premium 3D Treatment */}
           <div
             id="brand-logo"
             onClick={() => setActiveTab('converter')}
             className="flex items-center space-x-2.5 cursor-pointer select-none group"
+            style={{ perspective: '800px' }}
           >
-            <div className="w-7 h-7 rounded-md bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-950 flex items-center justify-center font-bold text-xs shadow-xs">
-              <Layers className="w-4 h-4" />
+            <div
+              className="relative w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs transition-transform duration-500 group-hover:rotate-y-12 group-hover:rotate-x-6 group-hover:scale-105"
+              style={{ transformStyle: 'preserve-3d' }}
+            >
+              <div className="absolute inset-0 rounded-lg bg-slate-900 dark:bg-white shadow-[0_4px_12px_rgba(0,0,0,0.2)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.5),0_0_15px_rgba(255,255,255,0.1)] border border-slate-700/50 dark:border-slate-200/50" style={{ transform: 'translateZ(0px)' }} />
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 dark:from-slate-100 dark:to-slate-300 opacity-90" style={{ transform: 'translateZ(2px)' }} />
+              <div className="absolute inset-0 rounded-lg bg-gradient-to-b from-white/20 to-transparent dark:from-white/60 dark:to-transparent border border-white/10 dark:border-white/40" style={{ transform: 'translateZ(4px)' }} />
+              <Layers className="relative w-4 h-4 text-white dark:text-slate-900 drop-shadow-md transition-transform duration-500 group-hover:translate-z-8" style={{ transform: 'translateZ(6px)' }} />
             </div>
-            <div className="flex items-center space-x-2">
-              <span className="font-semibold text-base tracking-tight text-slate-900 dark:text-white">
+            <div className="flex items-center space-x-2 transition-transform duration-500 group-hover:translate-x-1">
+              <span className="font-extrabold text-lg tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-slate-800 to-slate-950 dark:from-white dark:to-slate-300 drop-shadow-sm filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.1)] dark:drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
                 ConvertAnyFile
               </span>
               <span
-                className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 select-none cursor-pointer hover:bg-amber-500/20 transition-colors"
+                className="inline-flex items-center space-x-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 select-none cursor-pointer hover:bg-amber-500/20 transition-colors shadow-sm"
                 title="Barnaby the Brown Siberian Husky · ConvertAnyFile Mascot"
               >
                 <span>🐺</span>

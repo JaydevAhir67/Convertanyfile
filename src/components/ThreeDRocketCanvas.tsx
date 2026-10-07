@@ -329,10 +329,10 @@ export const ThreeDRocketCanvas: React.FC<ThreeDRocketCanvasProps> = ({
     huskyHead.add(maskMesh);
 
     // Black Leather Nose
-    const noseGeo = new THREE.SphereGeometry(0.026, 12, 12);
-    const noseMesh = new THREE.Mesh(noseGeo, huskyNoseMat);
-    noseMesh.position.set(0, -0.02, 0.21);
-    huskyHead.add(noseMesh);
+    const huskyNoseGeo = new THREE.SphereGeometry(0.026, 12, 12);
+    const huskyNoseMesh = new THREE.Mesh(huskyNoseGeo, huskyNoseMat);
+    huskyNoseMesh.position.set(0, -0.02, 0.21);
+    huskyHead.add(huskyNoseMesh);
 
     // Upright Triangular Husky Ears
     const leftEar = new THREE.Group();
@@ -595,6 +595,14 @@ export const ThreeDRocketCanvas: React.FC<ThreeDRocketCanvasProps> = ({
         capsuleGroup.position.z = THREE.MathUtils.lerp(0.5, 0.1, t);
         capsuleGroup.scale.setScalar(THREE.MathUtils.lerp(0.7, 0.15, t));
         capsuleGroup.rotation.y = elapsed * 3;
+      } else if (currentStage !== 'complete' && currentStage !== 'error') {
+        capsuleGroup.position.copy(rocketGroup.position);
+        capsuleGroup.position.x += 0.45;
+        capsuleGroup.position.y -= 0.1;
+        capsuleGroup.position.z += 0.25;
+        capsuleGroup.rotation.z = Math.sin(elapsed * 12) * 0.1;
+        capsuleGroup.rotation.y = elapsed * 2;
+        capsuleGroup.scale.setScalar(0.15);
       } else if (currentStage === 'complete') {
         capsuleGroup.position.x = THREE.MathUtils.lerp(capsuleGroup.position.x, -0.65, 0.05);
         capsuleGroup.position.y = THREE.MathUtils.lerp(capsuleGroup.position.y, 0.45, 0.05);
