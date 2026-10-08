@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { SoundEngine } from '../services/soundEffects';
-import { hapticSelect } from '../services/haptics';
+import { hapticRyno, hapticSelect } from '../services/haptics';
 
 export interface HuskyCompanionCanvasProps {
   isDragging?: boolean;
@@ -44,12 +44,12 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
     const container = mountRef.current;
     if (!container) return;
 
-    const width = container.clientWidth || (size === 'sm' ? 120 : size === 'lg' ? 220 : 160);
-    const height = container.clientHeight || (size === 'sm' ? 120 : size === 'lg' ? 220 : 160);
+    const width = container.clientWidth || (size === 'sm' ? 180 : size === 'lg' ? 320 : 240);
+    const height = container.clientHeight || (size === 'sm' ? 180 : size === 'lg' ? 320 : 240);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(38, width / height, 0.1, 50);
-    camera.position.set(0, 0.25, 3.4);
+    const camera = new THREE.PerspectiveCamera(30, width / height, 0.1, 50);
+    camera.position.set(0, 0.45, 5.5);
 
     let renderer: THREE.WebGLRenderer;
     try {
@@ -94,7 +94,7 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
       roughness: 0.1,
       metalness: 0.9,
       emissive: 0x0284c7,
-      emissiveIntensity: 0.35
+      emissiveIntensity: 0.45
     });
 
     const pupilMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
@@ -104,7 +104,8 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
 
     // Root Mascot Group
     const mascotGroup = new THREE.Group();
-    mascotGroup.position.set(0, -0.22, 0);
+    mascotGroup.position.set(0, -0.2, 0);
+    mascotGroup.scale.setScalar(1.7);
     scene.add(mascotGroup);
 
     // Torso / Body (Sitting posture)
@@ -171,7 +172,7 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
 
     // Articulated Head Group
     const headGroup = new THREE.Group();
-    headGroup.position.set(0, 0.58, 0.08);
+    headGroup.position.set(0, 0.58, 0.18);
     mascotGroup.add(headGroup);
 
     // Head Skull
@@ -271,14 +272,25 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
     rimLight.position.set(-2, -1, -2);
     scene.add(rimLight);
 
-    // Mouse movement listener
-    const handleMouseMove = (e: MouseEvent) => {
+    const pointerState = { x: 0, y: 0, active: false };
+
+    const handlePointerMove = (event: MouseEvent) => {
       const rect = container.getBoundingClientRect();
-      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      const y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      mousePosRef.current = { x: Math.max(-1, Math.min(1, x)), y: Math.max(-1, Math.min(1, y)) };
+      const centerX = rect.left + rect.width * 0.5;
+      const centerY = rect.top + rect.height * 0.5;
+      const x = (event.clientX - centerX) / (rect.width * 0.9 || 1);
+      const y = (event.clientY - centerY) / (rect.height * 0.9 || 1);
+      pointerState.x = THREE.MathUtils.clamp(x, -1.8, 1.8);
+      pointerState.y = THREE.MathUtils.clamp(y, -1.8, 1.8);
+      pointerState.active = true;
     };
-    window.addEventListener('mousemove', handleMouseMove);
+
+    const handlePointerLeave = () => {
+      pointerState.active = false;
+    };
+
+    window.addEventListener('mousemove', handlePointerMove);
+    window.addEventListener('mouseleave', handlePointerLeave);
 
     // Animation Loop
     let animationFrameId: number;
@@ -292,44 +304,75 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
       const isDraggingNow = isDraggingRef.current;
       const isSelectedNow = isSelectedRef.current;
       const isCompletedNow = isCompletedRef.current;
-      const mouse = mousePosRef.current;
+      const activePointerX = pointerState.active ? pointerState.x : 0;
+      const activePointerY = pointerState.active ? pointerState.y : 0;
+      const distance = Math.hypot(activePointerX, activePointerY);
+      const engaged = pointerState.active ? THREE.MathUtils.clamp(1 - distance / 1.65, 0, 1) : 0;
 
-      // Tail wag speed
       const tailSpeed = isCompletedNow ? 16 : isSelectedNow ? 12 : isDraggingNow ? 10 : 5;
       const tailAmp = isCompletedNow ? 0.45 : isSelectedNow ? 0.35 : 0.2;
       tailGroup.rotation.z = Math.sin(elapsed * tailSpeed) * tailAmp;
 
-      // Breathing
+      const idleBreath = Math.sin(elapsed * 2.2) * 0.02;
+      mascotGroup.position.y = THREE.MathUtils.lerp(mascotGroup.position.y, -0.2 + idleBreath, 0.08);
       mascotGroup.scale.x = 1 + Math.sin(elapsed * 2.2) * 0.015;
       mascotGroup.scale.z = 1 + Math.sin(elapsed * 2.2) * 0.015;
 
+      const lookX = activePointerX * (0.85 + engaged * 1.2);
+      const lookY = -activePointerY * (0.8 + engaged * 1.35);
+
+      const targetHeadX = -lookY * 0.9 + Math.sin(elapsed * 1.4) * 0.12;
+      const targetHeadY = lookX * 1.1 + Math.sin(elapsed * 1.1) * 0.08;
+      const targetFaceZ = 0.18 + engaged * 0.24;
+
+      headGroup.rotation.x = THREE.MathUtils.lerp(headGroup.rotation.x, targetHeadX, 0.08);
+      headGroup.rotation.y = THREE.MathUtils.lerp(headGroup.rotation.y, targetHeadY, 0.08);
+      headGroup.rotation.z = THREE.MathUtils.lerp(headGroup.rotation.z, -lookX * 0.2, 0.08);
+      headGroup.position.z = THREE.MathUtils.lerp(headGroup.position.z, targetFaceZ, 0.08);
+      headGroup.position.y = THREE.MathUtils.lerp(headGroup.position.y, 0.58 + Math.sin(elapsed * 2.8) * 0.02 + engaged * 0.06, 0.08);
+      headGroup.scale.setScalar(1 + engaged * 0.18);
+
+      const eyeOffsetX = activePointerX * (0.08 + engaged * 0.14);
+      const eyeOffsetY = -activePointerY * (0.07 + engaged * 0.15);
+      const eyeDepth = 0.05 + engaged * 0.08;
+
+      eyeL.position.x = THREE.MathUtils.lerp(eyeL.position.x, -0.075 + eyeOffsetX, 0.12);
+      eyeL.position.y = THREE.MathUtils.lerp(eyeL.position.y, 0.03 + eyeOffsetY, 0.12);
+      eyeL.position.z = THREE.MathUtils.lerp(eyeL.position.z, 0.19 + eyeDepth, 0.12);
+      eyeL.scale.setScalar(1 + engaged * 0.25);
+
+      eyeR.position.x = THREE.MathUtils.lerp(eyeR.position.x, 0.075 + eyeOffsetX, 0.12);
+      eyeR.position.y = THREE.MathUtils.lerp(eyeR.position.y, 0.03 + eyeOffsetY, 0.12);
+      eyeR.position.z = THREE.MathUtils.lerp(eyeR.position.z, 0.19 + eyeDepth, 0.12);
+      eyeR.scale.setScalar(1 + engaged * 0.25);
+
+      pupilL.position.x = THREE.MathUtils.lerp(pupilL.position.x, -0.075 + eyeOffsetX * 1.5, 0.1);
+      pupilL.position.y = THREE.MathUtils.lerp(pupilL.position.y, 0.03 + eyeOffsetY * 1.45, 0.1);
+      pupilL.position.z = THREE.MathUtils.lerp(pupilL.position.z, 0.22 + eyeDepth * 0.9, 0.1);
+      pupilL.scale.setScalar(1 + engaged * 0.22);
+
+      pupilR.position.x = THREE.MathUtils.lerp(pupilR.position.x, 0.075 + eyeOffsetX * 1.5, 0.1);
+      pupilR.position.y = THREE.MathUtils.lerp(pupilR.position.y, 0.03 + eyeOffsetY * 1.45, 0.1);
+      pupilR.position.z = THREE.MathUtils.lerp(pupilR.position.z, 0.22 + eyeDepth * 0.9, 0.1);
+      pupilR.scale.setScalar(1 + engaged * 0.22);
+
+      const earTarget = 0.22 + engaged * 0.25 + Math.sin(elapsed * 4.5) * 0.06;
+      leftEar.rotation.z = THREE.MathUtils.lerp(leftEar.rotation.z, earTarget, 0.1);
+      rightEar.rotation.z = THREE.MathUtils.lerp(rightEar.rotation.z, -earTarget, 0.1);
+      leftEar.rotation.y = THREE.MathUtils.lerp(leftEar.rotation.y, -0.15 + lookX * 0.28, 0.08);
+      rightEar.rotation.y = THREE.MathUtils.lerp(rightEar.rotation.y, 0.15 + lookX * 0.28, 0.08);
+
       if (isDraggingNow) {
-        // Highly alert! Looks up towards the incoming dragged file
-        headGroup.rotation.x = THREE.MathUtils.lerp(headGroup.rotation.x, -0.3, 0.1);
-        headGroup.rotation.y = THREE.MathUtils.lerp(headGroup.rotation.y, mouse.x * 0.4, 0.1);
-        leftEar.rotation.z = 0.32;
-        rightEar.rotation.z = -0.32;
+        headGroup.rotation.x = THREE.MathUtils.lerp(headGroup.rotation.x, -0.42 + engaged * 0.22, 0.08);
+        headGroup.rotation.y = THREE.MathUtils.lerp(headGroup.rotation.y, lookX * 1.35, 0.08);
+        headGroup.rotation.z = THREE.MathUtils.lerp(headGroup.rotation.z, -lookX * 0.2, 0.08);
       } else if (isSelectedNow) {
-        // Happy nodding approval
-        const nod = Math.sin(elapsed * 6) * 0.1;
-        headGroup.rotation.x = THREE.MathUtils.lerp(headGroup.rotation.x, nod, 0.15);
+        const nod = Math.sin(elapsed * 6) * 0.12;
+        headGroup.rotation.x = THREE.MathUtils.lerp(headGroup.rotation.x, nod, 0.12);
         headGroup.rotation.y = THREE.MathUtils.lerp(headGroup.rotation.y, 0, 0.1);
-        leftEar.rotation.z = 0.26;
-        rightEar.rotation.z = -0.26;
       } else if (isCompletedNow) {
-        // Joyful victory bob
-        headGroup.position.y = 0.58 + Math.sin(elapsed * 8) * 0.03;
-        headGroup.rotation.y = Math.sin(elapsed * 5) * 0.15;
-        leftEar.rotation.z = 0.3 + Math.sin(elapsed * 10) * 0.05;
-        rightEar.rotation.z = -0.3 - Math.sin(elapsed * 10) * 0.05;
-      } else {
-        // Natural curious tracking of user cursor
-        const targetHeadX = -mouse.y * 0.25;
-        const targetHeadY = mouse.x * 0.45;
-        headGroup.rotation.x = THREE.MathUtils.lerp(headGroup.rotation.x, targetHeadX, 0.05);
-        headGroup.rotation.y = THREE.MathUtils.lerp(headGroup.rotation.y, targetHeadY, 0.05);
-        leftEar.rotation.z = 0.22;
-        rightEar.rotation.z = -0.22;
+        headGroup.position.y = THREE.MathUtils.lerp(headGroup.position.y, 0.62 + Math.sin(elapsed * 8) * 0.04 + engaged * 0.08, 0.08);
+        headGroup.rotation.y = THREE.MathUtils.lerp(headGroup.rotation.y, Math.sin(elapsed * 5) * 0.2, 0.08);
       }
 
       renderer.render(scene, camera);
@@ -339,7 +382,8 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mousemove', handlePointerMove);
+      window.removeEventListener('mouseleave', handlePointerLeave);
       try {
         if (container.contains(renderer.domElement)) {
           container.removeChild(renderer.domElement);
@@ -351,6 +395,7 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
 
   const handleCompanionClick = () => {
     SoundEngine.playHuskyGreeting();
+    hapticRyno();
     hapticSelect();
   };
 
@@ -365,9 +410,10 @@ export const HuskyCompanionCanvas: React.FC<HuskyCompanionCanvasProps> = ({
       <div
         ref={mountRef}
         style={{
-          width: size === 'sm' ? 100 : size === 'lg' ? 200 : 140,
-          height: size === 'sm' ? 100 : size === 'lg' ? 200 : 140,
-          touchAction: 'none'
+          width: size === 'sm' ? 180 : size === 'lg' ? 320 : 240,
+          height: size === 'sm' ? 180 : size === 'lg' ? 320 : 240,
+          touchAction: 'none',
+          pointerEvents: 'none'
         }}
         className="relative flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
       />
